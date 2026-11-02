@@ -1,0 +1,20 @@
+{
+  "name": "uplide-debugbar",
+  "private": true,
+  "packageManager": "pnpm@11.0.8",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter \"./packages/**\" build",
+    "typecheck": "pnpm -r --filter \"./packages/**\" typecheck",
+    "test": "pnpm -r --filter \"./packages/**\" test",
+    "example:api": "pnpm --filter example-nest-api dev",
+    "example:web": "pnpm --filter example-next-app dev"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

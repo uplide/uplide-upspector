@@ -1,0 +1,30 @@
+{
+  "name": "@uplide/debugbar-nest",
+  "version": "0.1.0",
+  "description": "Per-request debugbar for NestJS: SQL, HTTP, cache, logs and timers in a `debugbar` response key.",
+  "license": "UNLICENSED",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@uplide/debugbar-protocol": "workspace:*"
+  },
+  "peerDependencies": {
+    "@nestjs/common": ">=10",
+    "@nestjs/core": ">=10",
+    "rxjs": ">=7"
+  },
+  "devDependencies": {
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/core": "^11.1.6",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  }
+}
