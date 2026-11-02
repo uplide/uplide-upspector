@@ -10,7 +10,9 @@
     "typecheck": "pnpm -r --filter \"./packages/**\" typecheck",
     "test": "pnpm -r --filter \"./packages/**\" test",
     "example:api": "pnpm --filter example-nest-api dev",
-    "example:web": "pnpm --filter example-next-app dev"
+    "example:web": "pnpm --filter example-next-app dev",
+    "docs:dev": "pnpm --filter debugbar-docs dev",
+    "docs:build": "pnpm --filter debugbar-docs build"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

@@ -1,0 +1,64 @@
+---
+title: Frontend config
+description: Fields accepted by setDebugbarConfig, defineDebugbarConfig and defineNextDebugbarConfig.
+icon: Settings
+---
+
+`setDebugbarConfig` registers the config on `globalThis`, so two copies of the
+package (two versions, or ESM next to CJS) read the same one. Without a
+registered config, capture is disabled.
+
+Next.js apps use [`defineNextDebugbarConfig`](/docs/frontend/nextjs#config-reference),
+which builds `match` from `backend` and takes every other field below.
+
+<TypeTable
+  type={{
+    enabled: {
+      type: 'boolean',
+      description: 'Master switch. When false no adapter touches a single request.',
+      required: true,
+    },
+    match: {
+      type: '(url: string) => boolean',
+      description: 'Decides which absolute request URLs belong to the instrumented backend.',
+      required: true,
+    },
+    responseKey: {
+      type: 'string',
+      description: 'Must equal the backend `responseKey`.',
+      default: '"debugbar"',
+    },
+    redactKeys: {
+      type: '(string | RegExp)[]',
+      description: 'Extra names to mask in headers, query parameters and JSON bodies.',
+      default: '[]',
+    },
+    revealKeys: {
+      type: '(string | RegExp)[]',
+      description: 'Names never masked by the name rules. Credential-shaped values are masked regardless.',
+      default: '[]',
+    },
+    redactHeaders: {
+      type: 'string[]',
+      description: 'Extra header names to mask, on top of the built-in credential patterns.',
+      default: '[]',
+    },
+    ssrHeaders: {
+      type: 'string[] | "all"',
+      description: 'Header values an SSR capture keeps on top of the built-in allowlist. `"all"` turns the allowlist off.',
+      default: '[]',
+    },
+    maxBodyChars: {
+      type: 'number',
+      description: 'Captured request and response bodies are cut to this length.',
+      default: '24000',
+    },
+    inspectEndpoint: {
+      type: 'string',
+      description: 'Route the element picker posts to.',
+      default: '"/api/debugbar/inspect"',
+    },
+  }}
+/>
+
+See [Redaction](/docs/frontend/redaction) for how the masking rules work.

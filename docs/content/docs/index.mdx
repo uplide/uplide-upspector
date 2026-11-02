@@ -1,0 +1,51 @@
+---
+title: Introduction
+description: A per-request debug bar for a NestJS backend and a React / Next.js frontend.
+icon: Bug
+---
+
+debugbar measures every backend request — SQL, outbound HTTP, cache, logs,
+timers and memory — and appends the result to the JSON response. The frontend
+lifts it off again, from axios or `fetch`, in the browser or during SSR, and
+shows it in an overlay docked to the bottom of the page.
+
+<Callout type="warn" title="Development only">
+  The payload contains SQL text, bound parameters, logs and request bodies.
+  Never enable it on a deployment that real users hit.
+</Callout>
+
+## Packages
+
+| Package | What it is |
+| --- | --- |
+| `@uplide/debugbar-protocol` | The wire contract: payload types, `DEBUGBAR_PAYLOAD_VERSION`, the `x-debugbar` header, guards. |
+| `@uplide/debugbar-nest` | NestJS collector and integrations (Prisma driver adapter, ioredis, axios, fetch, logger). |
+| `@uplide/debugbar` | Framework-agnostic capture (`/axios`, `/fetch`) and the React overlay (`/react`). |
+| `@uplide/debugbar-next` | Next.js App Router glue: SSR capture, render profiling, element inspector route. |
+
+## What the overlay shows
+
+The bar lists every captured backend call, from the server render (SSR) and
+from the browser (CSR). For the selected call it has these tabs:
+
+- **Request** — method, URL, route, status, request and response bodies.
+- **Database** — each SQL query with parameters, duration, transaction flag,
+  the application call site that issued it, and duplicate (N+1) detection.
+- **Timers** — spans for the pre-handler phase, the handler, serialization
+  and any custom span you open.
+- **Cache / HTTP / Logs** — Redis commands, outbound calls the backend made,
+  and every line the Nest logger printed during the request.
+
+Two tabs belong to the page rather than a single call:
+
+- **Render** — the Next.js server render pass: wall time, heap and GC, and
+  optionally per-component windows and allocations.
+- **Inspect** — pick an element on the page and see the source and data calls
+  that rendered it.
+
+<Cards>
+  <Card title="Quick start" href="/docs/quick-start" description="Run the example apps in two terminals." />
+  <Card title="How it works" href="/docs/how-it-works" description="The wire contract between backend and frontend." />
+  <Card title="NestJS setup" href="/docs/backend" description="Collect a payload for every request." />
+  <Card title="Next.js setup" href="/docs/frontend/nextjs" description="Capture it during SSR and in the browser." />
+</Cards>

@@ -1,0 +1,16 @@
+{
+  "title": "debugbar",
+  "pages": [
+    "---Getting started---",
+    "index",
+    "quick-start",
+    "how-it-works",
+    "---Backend---",
+    "...backend",
+    "---Frontend---",
+    "...frontend",
+    "---Reference---",
+    "...reference",
+    "development"
+  ]
+}

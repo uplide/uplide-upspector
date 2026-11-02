@@ -1,0 +1,88 @@
+---
+title: Integrations
+description: Prisma, ioredis, outbound HTTP, logs and custom spans.
+icon: Plug
+---
+
+Every integration looks up the collector of the current request through
+`AsyncLocalStorage`. Outside a request, or with `enabled: false`, it does
+nothing.
+
+## Prisma
+
+With Prisma 7, wrap the **driver adapter**, not the client:
+
+```ts title="src/prisma.service.ts"
+import { PrismaPg } from '@prisma/adapter-pg';
+import { instrumentPrismaDriverAdapter } from '@uplide/debugbar-nest';
+import { debugbarOptions } from './debugbar';
+
+new PrismaClient({
+  adapter: instrumentPrismaDriverAdapter(new PrismaPg(pool), debugbarOptions),
+});
+```
+
+Each query records its SQL, parameters, duration, kind (`query`, `execute`,
+`begin`, `script`), whether it ran inside a transaction and the application
+call site. Identical SQL issued more than once in a request is listed under
+`duplicates` (top 10, most repeated first), which is how the bar flags N+1 patterns.
+
+## Redis (ioredis)
+
+```ts
+import { instrumentRedisClient } from '@uplide/debugbar-nest';
+
+const redis = instrumentRedisClient(new Redis(process.env.REDIS_URL));
+```
+
+Records the command, key, argument count and duration of every operation.
+
+## Outbound HTTP
+
+```ts
+import axios from 'axios';
+import {
+  installAxiosInstrumentation,
+  installFetchInstrumentation,
+} from '@uplide/debugbar-nest';
+
+installAxiosInstrumentation(axios); // default instance + every axios.create()
+installFetchInstrumentation(); // patches globalThis.fetch
+```
+
+Records method, URL, status code, duration and errors of calls the backend
+makes to other services. The axios integration also patches `axios.create`,
+so instances built later — including `@nestjs/axios`'s `HttpService` — are
+covered.
+
+## Logs
+
+`DebugbarConsoleLogger` extends Nest's `ConsoleLogger` and mirrors each printed
+line into the current request. Console output stays byte-identical, and only
+enabled log levels are captured.
+
+```ts
+const app = await NestFactory.create(AppModule, {
+  logger: new DebugbarConsoleLogger(),
+});
+// or later: app.useLogger(new DebugbarConsoleLogger());
+```
+
+## Custom spans
+
+Time work the built-in integrations do not see — queue producers, background
+fan-out inside a request:
+
+```ts
+import { getDebugbarCollector } from '@uplide/debugbar-nest';
+
+const end = getDebugbarCollector()?.startSpan('pricing:recalculate');
+try {
+  await recalculatePrices();
+} finally {
+  end?.();
+}
+```
+
+The span shows up in the **Timers** tab next to the built-in `pre-handler`,
+`handler`, `serialize` and `total` spans.

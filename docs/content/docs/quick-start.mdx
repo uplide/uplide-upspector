@@ -1,0 +1,72 @@
+---
+title: Quick start
+description: Run the NestJS and Next.js example apps and open the bar.
+icon: Rocket
+---
+
+The repository ships two example apps wired exactly as these docs describe:
+`examples/nest-api` (NestJS + Prisma on SQLite, port 4100) and
+`examples/next-app` (Next.js 16, port 4200).
+
+<Steps>
+<Step>
+
+### Install and build
+
+Requires Node.js 22 or newer and pnpm.
+
+```bash
+pnpm install && pnpm build
+```
+
+</Step>
+<Step>
+
+### Create the database
+
+```bash
+pnpm --filter example-nest-api db:push
+```
+
+</Step>
+<Step>
+
+### Start the API
+
+```bash
+APP_DEBUG=true pnpm example:api
+```
+
+</Step>
+<Step>
+
+### Start the web app
+
+In a second terminal:
+
+```bash
+NEXT_PUBLIC_DEBUGBAR=true pnpm example:web
+```
+
+</Step>
+<Step>
+
+### Open the page
+
+Open [http://localhost:4200](http://localhost:4200) and click the icon in the
+bottom-right corner.
+
+</Step>
+</Steps>
+
+Both flags default to off: without them the apps run, but no payload is
+attached or captured.
+
+## What to try
+
+- The product list is an SSR request with a deliberate **N+1** — the Database
+  tab flags the repeated query.
+- The buttons issue browser requests through `fetch` and axios, a `400` error
+  envelope, and a `debugbar: false` opt-out that never shows up in the bar.
+- Press <kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> to pick an
+  element with the inspector.

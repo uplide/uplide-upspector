@@ -1,0 +1,36 @@
+---
+title: Render profiling
+description: Measure the Next.js server render pass in the Render tab.
+icon: Gauge
+---
+
+Every page rendered with [`openDebugbarScope`](/docs/frontend/nextjs) gets a
+render pass in the **Render** tab: wall time, heap and RSS deltas, and GC
+pressure.
+
+## Allocation profiling
+
+Pass `profile: true` to also run V8's sampling heap profiler during the
+render and attribute allocations to stacks:
+
+```tsx title="app/layout.tsx"
+openDebugbarScope({ profile: process.env.DEBUGBAR_RENDER_PROFILE === 'true' });
+```
+
+The profiler adds overhead; keep it behind its own flag.
+
+## Per-component windows
+
+Wrap an async server component to see its render window:
+
+```tsx title="app/products/product-list.tsx"
+import { measureServerComponent } from '@uplide/debugbar-next/server';
+
+export const ProductList = measureServerComponent('ProductList', async () => {
+  const products = await getProducts();
+  return <ul>{/* … */}</ul>;
+});
+```
+
+It is a pass-through when no render pass started — every request with the
+debugbar off.

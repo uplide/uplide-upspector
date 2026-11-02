@@ -1,0 +1,117 @@
+---
+title: NestJS setup
+description: Collect a debugbar payload for every request in a NestJS app.
+icon: Server
+---
+
+```bash
+pnpm add @uplide/debugbar-nest
+```
+
+Peer dependencies: `@nestjs/common` and `@nestjs/core` 10 or newer, `rxjs` 7.
+
+<Steps>
+<Step>
+
+### Define the options once
+
+Resolve the options in their own file so the module, the middleware and the
+Prisma adapter share one object.
+
+```ts title="src/debugbar.ts"
+import { resolveDebugbarOptions } from '@uplide/debugbar-nest';
+
+export const debugbarOptions = resolveDebugbarOptions({
+  enabled: process.env.APP_DEBUG === 'true',
+  skip: (req) => (req.originalUrl ?? req.url ?? '').startsWith('/api/health'),
+});
+```
+
+</Step>
+<Step>
+
+### Register the module
+
+`NestDebugbarModule.forRoot` is global. It provides the options under the
+`DEBUGBAR_OPTIONS` token and registers `DebugbarInterceptor`, which adds the
+route identity and the handler span.
+
+```ts title="src/app.module.ts"
+import { NestDebugbarModule } from '@uplide/debugbar-nest';
+import { debugbarOptions } from './debugbar';
+
+@Module({
+  imports: [NestDebugbarModule.forRoot(debugbarOptions)],
+})
+export class AppModule {}
+```
+
+</Step>
+<Step>
+
+### Wire the middleware
+
+The middleware is not registered through `MiddlewareConsumer` on purpose: add
+it with `app.use` **before guards and pipes**, so their queries are captured
+too.
+
+```ts title="src/main.ts"
+import {
+  createDebugbarMiddleware,
+  DEBUGBAR_HEADER,
+  DebugbarConsoleLogger,
+  installAxiosInstrumentation,
+  installFetchInstrumentation,
+} from '@uplide/debugbar-nest';
+import axios from 'axios';
+import { debugbarOptions } from './debugbar';
+
+const app = await NestFactory.create(AppModule, {
+  logger: new DebugbarConsoleLogger(),
+});
+
+app.enableCors({
+  origin: process.env.WEB_ORIGIN,
+  exposedHeaders: [DEBUGBAR_HEADER],
+});
+
+if (debugbarOptions.enabled) {
+  app.use(createDebugbarMiddleware(debugbarOptions));
+  installAxiosInstrumentation(axios);
+  installFetchInstrumentation();
+}
+```
+
+</Step>
+<Step>
+
+### Instrument your data sources
+
+Wrap the Prisma driver adapter and Redis clients — see
+[Integrations](/docs/backend/integrations).
+
+</Step>
+</Steps>
+
+<Callout type="warn" title="CORS">
+  Browsers only see `x-debugbar` cross-origin when CORS exposes it. Without
+  `exposedHeaders: ["x-debugbar"]` the browser `fetch` adapter skips the body
+  and the bar stays empty for client requests.
+</Callout>
+
+## Reading the options elsewhere
+
+The module exposes the resolved options, so code that has no access to your
+options file can read them back:
+
+```ts
+import { DEBUGBAR_OPTIONS, type ResolvedDebugbarOptions } from '@uplide/debugbar-nest';
+
+const options = app.get<ResolvedDebugbarOptions>(DEBUGBAR_OPTIONS);
+```
+
+## What gets injected
+
+The payload is added in `res.json`, so it works with any response envelope your
+app uses, including error envelopes from exception filters. Only plain-object
+bodies carry it; arrays, strings, streams and files are left untouched.
