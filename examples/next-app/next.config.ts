@@ -1,6 +1,5 @@
 import { withDebugbar } from "@uplide/debugbar-next/config";
 import type { NextConfig } from "next";
-import debugbar from "./debugbar.config";
 
 const isDev = process.env.NODE_ENV !== "production";
 
@@ -18,4 +17,4 @@ const nextConfig: NextConfig = {
   turbopack: { rules: inspectorRules() },
 };
 
-export default withDebugbar(nextConfig, { enabled: debugbar.enabled });
+export default withDebugbar(nextConfig);

@@ -72,11 +72,12 @@ export default defineNextDebugbarConfig({
 ```
 
 ```ts
-// next.config.ts — dev HMR otherwise serves fetches from cache and the bar stays empty
+// next.config.ts — dev HMR otherwise serves fetches from cache and the bar stays empty.
+// Reads debugbar.config.{ts,mts,js,mjs} from the project root.
+// { configFile: "path/to/file.ts" } to use another path.
 import { withDebugbar } from "@uplide/debugbar-next/config";
-import debugbar from "./debugbar.config";
 
-export default withDebugbar(nextConfig, { enabled: debugbar.enabled });
+export default withDebugbar(nextConfig);
 ```
 
 ```ts
