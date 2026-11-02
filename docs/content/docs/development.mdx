@@ -1,0 +1,15 @@
+---
+title: Development
+description: Working on the debugbar monorepo itself.
+icon: Wrench
+---
+
+The repository is a pnpm workspace: the libraries live in `packages/`, the
+example apps in `examples/` and this site in `docs/`.
+
+```bash
+pnpm install
+pnpm build      # build every package
+pnpm typecheck
+pnpm test       # vitest in every package
+```

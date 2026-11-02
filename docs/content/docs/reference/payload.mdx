@@ -1,0 +1,93 @@
+---
+title: Payload
+description: The shape of the object the backend attaches to each response.
+icon: Braces
+---
+
+Types are exported from `@uplide/debugbar-protocol` (and re-exported by the
+other packages). This is version `1`. All times are milliseconds relative to
+the start of the request.
+
+```ts
+interface DebugbarPayload {
+  version: number;
+  requestId: string;
+  startedAt: string; // ISO timestamp
+  durationMs: number;
+  request: {
+    method: string;
+    url: string;
+    route?: string;
+    controller?: string;
+    handler?: string;
+    statusCode?: number;
+  };
+  timers: Array<{ name: string; startMs: number; durationMs: number }>;
+  database: {
+    count: number;
+    totalMs: number;
+    truncated: boolean;
+    duplicates: Array<{ sql: string; count: number }>;
+    queries: DebugbarQueryEntry[];
+  };
+  http: { count: number; totalMs: number; truncated: boolean; calls: DebugbarHttpEntry[] };
+  cache: { count: number; totalMs: number; truncated: boolean; operations: DebugbarCacheEntry[] };
+  logs: { count: number; truncated: boolean; entries: DebugbarLogEntry[] };
+  memory: { rssBytes: number; heapUsedBytes: number; heapUsedDeltaBytes: number };
+}
+```
+
+## Entries
+
+```ts
+interface DebugbarQueryEntry {
+  index: number;
+  kind: 'query' | 'execute' | 'begin' | 'script';
+  sql: string;
+  params?: unknown[];
+  startMs: number;
+  durationMs: number;
+  inTransaction: boolean;
+  callSite?: string;
+  error?: string;
+}
+
+interface DebugbarHttpEntry {
+  method: string;
+  url: string;
+  statusCode?: number;
+  startMs: number;
+  durationMs: number;
+  error?: string;
+}
+
+interface DebugbarCacheEntry {
+  command: string;
+  key?: string;
+  argCount: number;
+  startMs: number;
+  durationMs: number;
+  error?: string;
+}
+
+interface DebugbarLogEntry {
+  level: 'log' | 'error' | 'warn' | 'debug' | 'verbose' | 'fatal';
+  message: string;
+  context?: string;
+  atMs: number;
+}
+```
+
+## Error payload
+
+When the snapshot itself fails, the key holds this instead. A snapshot bug
+never turns a successful response into a `500`.
+
+```ts
+interface DebugbarErrorPayload {
+  version: number;
+  error: string;
+}
+```
+
+Use `isDebugbarPayload` and `isDebugbarErrorPayload` to tell them apart.

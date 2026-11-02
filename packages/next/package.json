@@ -36,7 +36,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@uplide/debugbar": "workspace:*"
+    "@uplide/debugbar": "workspace:*",
+    "jiti": "^2.7.0"
   },
   "peerDependencies": {
     "axios": "^1.7.0",

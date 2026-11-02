@@ -1,0 +1,165 @@
+---
+title: Next.js setup
+description: Capture the payload during SSR and in the browser with the App Router.
+icon: Layers
+---
+
+```bash
+pnpm add @uplide/debugbar @uplide/debugbar-next
+```
+
+Requires Next.js 15.3 or newer and React 19.
+
+After these five files, nothing else changes in the app: every server and
+browser `fetch` to the backend is captured.
+
+<Steps>
+<Step>
+
+### Shared config
+
+One config, used by the server and the browser.
+
+```ts title="debugbar.config.ts"
+import { defineNextDebugbarConfig } from '@uplide/debugbar-next';
+
+export default defineNextDebugbarConfig({
+  enabled: process.env.NEXT_PUBLIC_DEBUGBAR === 'true',
+  backend: {
+    origins: [process.env.NEXT_PUBLIC_API_BASE_URL],
+    proxyPath: '/api/proxy', // optional same-origin proxy the browser uses
+  },
+});
+```
+
+A request is captured when its origin is one of `backend.origins`, or when it
+is same-origin and its path starts with `backend.proxyPath`.
+
+</Step>
+<Step>
+
+### Next config
+
+In development, Next serves Server Component fetches from cache across HMR —
+even `no-store` ones — so after an edit the backend is never called and the bar
+stays empty. `withDebugbar` turns that cache off while the debugbar is enabled
+and returns your config untouched otherwise.
+
+```ts title="next.config.ts"
+import { withDebugbar } from '@uplide/debugbar-next/config';
+
+export default withDebugbar(nextConfig);
+// or: withDebugbar(nextConfig, { configFile: 'config/debugbar.ts' })
+```
+
+By default it reads the first `debugbar.config.{ts,mts,js,mjs}` in the project
+root.
+
+</Step>
+<Step>
+
+### Server instrumentation
+
+`register` runs before Next patches `fetch`, so the wrapper sits inside Next's
+dedup and Data Cache and only sees real network calls.
+
+```ts title="instrumentation.ts"
+export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const { registerDebugbar } = await import('@uplide/debugbar-next/server');
+    registerDebugbar((await import('./debugbar.config')).default);
+  }
+}
+```
+
+</Step>
+<Step>
+
+### Client instrumentation
+
+Must be synchronous: only synchronous code here is guaranteed to finish before
+hydration.
+
+```ts title="instrumentation-client.ts"
+import { installDebugbarClient } from '@uplide/debugbar-next/client';
+import debugbar from './debugbar.config';
+
+installDebugbarClient(debugbar);
+```
+
+</Step>
+<Step>
+
+### Root layout
+
+Call `openDebugbarScope` **before the first `await`** — Next starts rendering
+child segments while a parent layout is suspended, so anything awaited first
+would let the page's own requests go uncaptured. Render `DebugbarRoot` after
+`children`, inside `Suspense`, so it streams last.
+
+```tsx title="app/layout.tsx"
+import { Suspense } from 'react';
+import { DebugbarRoot, openDebugbarScope } from '@uplide/debugbar-next/server';
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  openDebugbarScope({ profile: process.env.DEBUGBAR_RENDER_PROFILE === 'true' });
+
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <Suspense>
+          <DebugbarRoot />
+        </Suspense>
+      </body>
+    </html>
+  );
+}
+```
+
+</Step>
+</Steps>
+
+## Scope and opt-out
+
+Server-side capture only applies inside a render. Route handlers (an API proxy
+streaming backend responses) and middleware are left alone.
+
+To skip a single call:
+
+```ts
+await fetch(`${API}/products`, { debugbar: false });
+```
+
+## `DebugbarRoot` props
+
+<TypeTable
+  type={{
+    nonce: { type: 'string', description: 'CSP nonce for the overlay\'s own `<style>` tag.' },
+    settleMs: {
+      type: 'number',
+      description:
+        'Quiet period with no new captures after which the render counts as done. Raise it if sibling segments start requests late.',
+      default: '50',
+    },
+  }}
+/>
+
+## Config reference
+
+`defineNextDebugbarConfig` takes everything in the
+[shared config](/docs/reference/config) except `match`, plus `backend`:
+
+<TypeTable
+  type={{
+    'backend.origins': {
+      type: '(string | undefined)[]',
+      description: 'Backend origins the server (and a CORS-enabled browser) calls directly. `undefined` entries are ignored, so env vars can be passed as is.',
+      required: true,
+    },
+    'backend.proxyPath': {
+      type: 'string',
+      description: 'Same-origin path the browser reaches the backend through. Page and RSC requests never start with it.',
+    },
+  }}
+/>

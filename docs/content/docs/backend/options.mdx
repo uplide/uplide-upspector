@@ -1,0 +1,65 @@
+---
+title: Options
+description: Every option NestDebugbarModule.forRoot and resolveDebugbarOptions accept.
+icon: SlidersHorizontal
+---
+
+```ts
+NestDebugbarModule.forRoot({
+  enabled: process.env.APP_DEBUG === 'true',
+  maxQueries: 500,
+  sanitizeParams: (sql, params) => params.map(() => '?'),
+});
+```
+
+<TypeTable
+  type={{
+    enabled: {
+      type: 'boolean',
+      description: 'Master switch. When false every integration is an identity / no-op.',
+      required: true,
+    },
+    responseKey: {
+      type: 'string',
+      description: 'Top-level response key. Must equal the frontend `responseKey`.',
+      default: '"debugbar"',
+    },
+    skip: {
+      type: '(req: DebugbarRequestLike) => boolean',
+      description: 'Return true to leave a request completely uninstrumented (health checks, metrics).',
+      default: '() => false',
+    },
+    maxSpans: { type: 'number', description: 'Timer spans kept per request.', default: '100' },
+    maxQueries: { type: 'number', description: 'SQL queries kept per request.', default: '200' },
+    maxHttpCalls: { type: 'number', description: 'Outbound HTTP calls kept per request.', default: '100' },
+    maxCacheOps: { type: 'number', description: 'Cache operations kept per request.', default: '200' },
+    maxLogs: { type: 'number', description: 'Log lines kept per request.', default: '200' },
+    maxSqlLength: { type: 'number', description: 'SQL text is cut to this many characters.', default: '2000' },
+    includeQueryParams: {
+      type: 'boolean',
+      description: 'Include bound query parameters in the payload.',
+      default: 'true',
+    },
+    paramMaxLength: { type: 'number', description: 'Each parameter value is cut to this length.', default: '256' },
+    sanitizeParams: {
+      type: '(sql: string, params: unknown[]) => unknown[]',
+      description: 'Replaces the built-in parameter sanitizer. Must never throw.',
+    },
+    captureCallSite: {
+      type: 'boolean',
+      description: 'Resolve the first application stack frame for every query.',
+      default: 'true',
+    },
+    callSiteRoot: {
+      type: 'string',
+      description: 'Call sites are reported relative to this directory.',
+      default: 'process.cwd()',
+    },
+  }}
+/>
+
+## Limits
+
+When a list hits its limit, further entries are dropped and the section's
+`truncated` flag is set; `count` and `totalMs` still cover every entry. Raise a
+limit for endpoints that legitimately issue many queries.

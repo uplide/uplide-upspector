@@ -1,0 +1,84 @@
+---
+title: Element inspector
+description: Pick an element and see the source and data calls that rendered it.
+icon: MousePointerClick
+---
+
+Press <kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> (or use the
+**Inspect** tab) and click an element on the page. The bar shows the component
+source around it, its git authorship, and the data calls nearby — matched to
+the backend requests the page made.
+
+## Setup
+
+The picker reads `data-insp-path` attributes from
+[`code-inspector-plugin`](https://github.com/zh-lx/code-inspector) in
+development builds, so add that plugin to your Next config first. Then add
+the route:
+
+```ts title="app/api/debugbar/inspect/route.ts"
+import { createInspectHandler } from '@uplide/debugbar-next/inspect';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const { POST } = createInspectHandler();
+```
+
+The default path is `/api/debugbar/inspect`; change it with the
+`inspectEndpoint` config field.
+
+## Options
+
+<TypeTable
+  type={{
+    patterns: {
+      type: 'DebugbarCallPattern[]',
+      description: 'Data-call patterns scanned in each file.',
+      default: 'fetch, axios-style clients, SWR / React Query hooks',
+    },
+    aliases: {
+      type: 'Record<string, string>',
+      description: 'Import aliases used to follow imports.',
+      default: '{ "@/": <app dir> }',
+    },
+    resolvers: {
+      type: 'DebugbarCallResolver[]',
+      description:
+        'Map a call with no path literal (a service layer, an endpoint registry) to its backend route. First defined answer wins.',
+    },
+    allowedHosts: {
+      type: 'string[]',
+      description: 'Hostnames besides loopback the dev server may be reached by, e.g. a LAN IP.',
+      default: '[]',
+    },
+  }}
+/>
+
+### Resolvers
+
+A resolver receives the call it found and returns the backend route it hits,
+or `undefined`. `readModule` follows imports, honouring the aliases.
+
+```ts
+export const { POST } = createInspectHandler({
+  resolvers: [
+    async ({ call, file, readModule }) => {
+      const match = /productsService\.(\w+)/.exec(call.expression);
+      if (!match) return undefined;
+
+      const service = await readModule(file, '@/services/products');
+      const route = service?.source.match(new RegExp(`${match[1]}[^']*'([^']+)'`));
+      return route?.[1];
+    },
+  ],
+});
+```
+
+## Security
+
+<Callout type="warn">
+  `next dev` listens on every interface. The route therefore answers only in
+  development, only to a same-origin `application/json` POST on a loopback
+  host, and only with files git does not ignore. Every entry in `allowedHosts`
+  widens who can read the repository's source — keep it empty unless needed.
+</Callout>

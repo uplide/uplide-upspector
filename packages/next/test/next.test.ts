@@ -4,6 +4,9 @@ import {
   setCaptureTracker,
 } from "@uplide/debugbar";
 import { wrapFetch } from "@uplide/debugbar/fetch";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Outside a real RSC request React's `cache()` never memoizes. A single shared
@@ -121,14 +124,43 @@ describe("defineNextDebugbarConfig", () => {
 });
 
 describe("withDebugbar", () => {
-  it("turns the HMR fetch cache off only when enabled", () => {
-    const base = { reactStrictMode: true, experimental: { ppr: true } };
+  const base = { reactStrictMode: true, experimental: { ppr: true } };
 
-    expect(withDebugbar(base, { enabled: false })).toBe(base);
-    expect(withDebugbar(base, { enabled: true })).toEqual({
+  function projectWith(files: Record<string, string>): string {
+    const root = mkdtempSync(join(tmpdir(), "debugbar-next-"));
+    for (const [name, source] of Object.entries(files)) {
+      writeFileSync(join(root, name), source);
+    }
+    vi.spyOn(process, "cwd").mockReturnValue(root);
+    return root;
+  }
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it("turns the HMR fetch cache off only when the config enables it", async () => {
+    projectWith({
+      "debugbar.config.ts": "export default { enabled: true as boolean };",
+    });
+    expect(await withDebugbar(base)()).toEqual({
       reactStrictMode: true,
       experimental: { ppr: true, serverComponentsHmrCache: false },
     });
+
+    projectWith({ "debugbar.config.ts": "export default { enabled: false };" });
+    expect(await withDebugbar(base)()).toBe(base);
+  });
+
+  it("reads a custom config path", async () => {
+    projectWith({ "debug.mjs": "export default { enabled: true };" });
+
+    const config = await withDebugbar(base, { configFile: "debug.mjs" })();
+    expect(config.experimental).toHaveProperty("serverComponentsHmrCache", false);
+  });
+
+  it("fails clearly when no config file exists", async () => {
+    projectWith({});
+
+    await expect(withDebugbar(base)()).rejects.toThrow(/No config file found/);
   });
 });
 

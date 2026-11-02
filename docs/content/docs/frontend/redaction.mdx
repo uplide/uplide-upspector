@@ -1,0 +1,61 @@
+---
+title: Redaction
+description: How secrets are masked before they reach the overlay or the RSC payload.
+icon: ShieldCheck
+---
+
+Captured exchanges are masked before they reach the overlay store or the
+page's RSC payload.
+
+## Masked by name
+
+Header names, query parameters and JSON body fields are matched by name
+**part**, in any spelling (`X-Api-Token`, `apiKey`, `refresh_token`):
+
+- `token`, `secret`, `password`, `cookie`, `credential`, `signature`, `jwt`,
+  `otp`, `sessionId`, `<api|access|secret|private|…> key` — **always** masked.
+- `key`, `session`, `auth` alone — masked only when the value **looks
+  generated** (long, unbroken, letters mixed with digits). So
+  `cacheKey: "products:page:12"` or `authProvider: "google"` stay visible.
+- A trailing metadata part describes a secret instead of holding it, and is
+  shown: `tokenType`, `tokenExpiresAt`, `passwordUpdatedAt`,
+  `signatureVersion`, `sessionCount`.
+- Booleans and nulls are never masked (`hasPassword: true`).
+- A container under an always-masked name is masked whole
+  (`credentials: {…}`); under `session` / `auth`, only its generated-looking
+  values are.
+
+## Masked by value
+
+Under any name: URL userinfo, `Bearer` / `Basic` headers, JWTs, `sk_live_…`
+keys, GitHub and Slack tokens, AWS access key ids.
+
+## SSR headers
+
+In SSR captures, **every** header value outside a small allowlist (content,
+caching and correlation headers) is masked. Server-side requests carry headers
+the browser never sent, so they are not trusted to a name pattern.
+
+## Configuring
+
+```ts title="debugbar.config.ts"
+defineNextDebugbarConfig({
+  // …
+  redactKeys: ['x-tenant', /ssn$/i], // always mask: headers, query, bodies
+  revealKeys: ['sortKey'], // never mask by name (credential-shaped values still are)
+  ssrHeaders: ['x-backend-node'], // extra SSR header values to show; "all" disables the allowlist
+});
+```
+
+A string matches a whole name case-insensitively; a `RegExp` is tested against
+it.
+
+## Limits
+
+<Callout type="warn">
+  - Non-JSON bodies and secrets inside URL paths (`/reset/<token>`) are not
+    masked unless their value has a credential format.
+  - A short hand-picked secret under an ambiguous name
+    (`x-internal-auth: letmein`) does not look generated and is shown in CSR
+    captures. List such names in `redactKeys`.
+</Callout>

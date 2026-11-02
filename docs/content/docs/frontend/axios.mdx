@@ -1,0 +1,59 @@
+---
+title: axios
+description: Capture requests made through axios instances.
+icon: ArrowLeftRight
+---
+
+`fetch` is captured automatically. axios instances need one line each.
+
+<Tabs items={['Server components', 'Browser']}>
+<Tab value="Server components">
+
+```ts title="lib/api.server.ts"
+import { attachDebugbarServerAxios } from '@uplide/debugbar-next/server';
+
+export const serverApi = axios.create({ baseURL: process.env.API_URL });
+attachDebugbarServerAxios(serverApi);
+```
+
+</Tab>
+<Tab value="Browser">
+
+```ts title="lib/api.ts"
+import { attachDebugbar } from '@uplide/debugbar/axios';
+
+export const browserApi = axios.create({ baseURL: process.env.NEXT_PUBLIC_API_URL });
+attachDebugbar(browserApi);
+```
+
+</Tab>
+</Tabs>
+
+<Callout title="Order matters">
+  Attach before any interceptor that snapshots response bodies, so the payload
+  key is lifted off first.
+</Callout>
+
+The interceptor times nothing itself — the backend already measured the
+request. It removes the payload key from every response, successes **and**
+errors (the backend attaches it to error envelopes too), and hands it to the
+overlay. Both functions return a detach function.
+
+## Options
+
+`attachDebugbar(api, options)` accepts:
+
+<TypeTable
+  type={{
+    source: { type: '"csr" | "ssr"', description: 'Where the request ran; shown in the bar.', default: '"csr"' },
+    onEntry: {
+      type: '(entry: DebugbarEntry) => void',
+      description: 'Where entries go.',
+      default: 'the browser overlay store',
+    },
+    inScope: {
+      type: '() => boolean',
+      description: 'Return false to leave a request untouched (e.g. outside a render).',
+    },
+  }}
+/>

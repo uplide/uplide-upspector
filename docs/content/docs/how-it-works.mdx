@@ -1,0 +1,67 @@
+---
+title: How it works
+description: The wire contract shared by the backend and the frontend.
+icon: Cable
+---
+
+The backend and frontend never talk to each other directly. The payload rides
+on the responses the app already makes, under a contract defined in
+`@uplide/debugbar-protocol`.
+
+## Request lifecycle
+
+1. The NestJS **middleware** opens a collector for the request and stores it in
+   `AsyncLocalStorage`. It runs before guards and pipes, so their queries are
+   captured too.
+2. **Integrations** (Prisma, ioredis, axios, `fetch`, the logger) look up the
+   current collector and record what they do.
+3. The **interceptor** adds route identity (`controller`, `handler`, `route`)
+   and the handler span.
+4. When the app calls `res.json`, the middleware snapshots the collector and
+   adds it to the body under the response key, then sets the `x-debugbar`
+   header.
+5. On the frontend, a **capture adapter** (axios interceptor or `fetch`
+   wrapper) removes the key from the body — your code never sees it — and
+   pushes an entry to the overlay store.
+
+## The contract
+
+- The payload rides under a top-level key of every **plain-object** JSON
+  response. The default key is `debugbar`; it is configurable on both sides
+  and the two must stay equal.
+- Every response that carries it also has `x-debugbar: <version>`. The `fetch`
+  adapter reads a body only when that header is present, so any other response
+  — streams, files, an API proxy passing bytes through — is never buffered.
+- When the backend's snapshot itself fails, the key holds
+  `{ version, error }`; the overlay shows that error instead of nothing.
+
+```json title="GET /products"
+{
+  "data": [{ "id": 1, "name": "Keyboard" }],
+  "debugbar": {
+    "version": 1,
+    "requestId": "…",
+    "durationMs": 18.4,
+    "request": { "method": "GET", "url": "/products", "statusCode": 200 },
+    "database": { "count": 11, "duplicates": [{ "sql": "SELECT …", "count": 10 }] }
+  }
+}
+```
+
+The full shape is documented in the [payload reference](/docs/reference/payload).
+
+## Protocol exports
+
+```ts
+import {
+  DEBUGBAR_HEADER, // "x-debugbar"
+  DEBUGBAR_PAYLOAD_VERSION, // 1
+  DEFAULT_RESPONSE_KEY, // "debugbar"
+  isDebugbarPayload,
+  isDebugbarErrorPayload,
+  takeDebugbarPayload,
+} from '@uplide/debugbar-protocol';
+```
+
+Field names are a public contract: changes are additive only, and
+`DEBUGBAR_PAYLOAD_VERSION` is bumped when the shape changes.

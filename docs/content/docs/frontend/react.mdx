@@ -1,0 +1,56 @@
+---
+title: Other React apps
+description: Use the capture adapters and overlay without Next.js.
+icon: Atom
+---
+
+```bash
+pnpm add @uplide/debugbar
+```
+
+Register a config, install a capture adapter, and render the overlay once.
+
+```tsx title="main.tsx"
+import { setDebugbarConfig } from '@uplide/debugbar';
+import { installFetchCapture } from '@uplide/debugbar/fetch';
+import { attachDebugbar } from '@uplide/debugbar/axios';
+import { DebugbarOverlay } from '@uplide/debugbar/react';
+
+setDebugbarConfig({
+  enabled: import.meta.env.DEV,
+  match: (url) => url.startsWith(API),
+});
+
+installFetchCapture(); // and/or attachDebugbar(axiosInstance)
+
+root.render(
+  <>
+    <App />
+    <DebugbarOverlay />
+  </>,
+);
+```
+
+Nothing is captured until a config with `enabled: true` is registered —
+capturing is never a fallback. See the [config reference](/docs/reference/config)
+for every field.
+
+`installFetchCapture` returns an uninstall function, and is safe to call again
+when the host may have swapped `fetch` out: it only re-wraps then.
+
+## Styling
+
+The overlay styles itself. Override the accent color with a CSS variable:
+
+```css
+:root {
+  --udbg-accent: #7c3aed;
+}
+```
+
+Under a strict Content Security Policy, pass the nonce for the overlay's
+`<style>` tag:
+
+```tsx
+<DebugbarOverlay nonce={nonce} />
+```
