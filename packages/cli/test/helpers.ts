@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { detectContext } from "../src/context.js";
+import { detectProject } from "../src/context.js";
 import type { Step, StepResult } from "../src/step.js";
 import { Workspace } from "../src/workspace.js";
 
@@ -78,7 +78,7 @@ export function runStep(
   files: Record<string, string> = {},
 ): { result: StepResult; written: Record<string, string> } {
   const workspace = new Workspace(createProject(files));
-  const result = step.run(detectContext(workspace, "NEXT_PUBLIC_API_BASE_URL"));
+  const result = step.run({ ...detectProject(workspace), apiEnv: "NEXT_PUBLIC_API_BASE_URL" });
   const written = Object.fromEntries(
     workspace.changes().map(({ path, after }) => [path, after]),
   );

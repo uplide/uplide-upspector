@@ -5,7 +5,7 @@ import { inspectRouteStep } from "../src/steps/inspect-route.js";
 import { instrumentationClientStep, instrumentationStep } from "../src/steps/instrumentation.js";
 import { layoutStep } from "../src/steps/layout.js";
 import { nextConfigStep } from "../src/steps/next-config.js";
-import { NEXT_CONFIG, runStep } from "./helpers.js";
+import { LAYOUT, NEXT_CONFIG, runStep } from "./helpers.js";
 
 describe("config", () => {
   it("creates debugbar.config with the chosen env variable", () => {
@@ -264,6 +264,42 @@ const RootLayout = async ({ children }: { children: ReactNode }) => {
 
 export default RootLayout;
 `);
+  });
+
+  it("adds its own react import next to a namespace import", () => {
+    const { written } = runStep(layoutStep, {
+      "app/layout.tsx": `import * as React from "react";\n\nexport default function RootLayout({ children }: { children: React.ReactNode }) {\n  return <html><body>{children}</body></html>;\n}\n`,
+    });
+
+    expect(written["app/layout.tsx"]).toContain(`import * as React from "react";`);
+    expect(written["app/layout.tsx"]).toContain(`import { Suspense } from "react";`);
+  });
+
+  it("imports Suspense under its own name when the file aliases it", () => {
+    const { written } = runStep(layoutStep, {
+      "app/layout.tsx": `import { Suspense as ReactSuspense } from "react";\n\nexport default function RootLayout({ children }) {\n  return <html><body>{children}</body></html>;\n}\n`,
+    });
+
+    expect(written["app/layout.tsx"]).toMatch(/import \{ Suspense as ReactSuspense, Suspense \} from "react";/);
+  });
+
+  it("keeps a 4-space file with a doc comment at 4 spaces", () => {
+    const { written } = runStep(layoutStep, {
+      "app/layout.tsx": `/**\n * The root layout.\n */\nexport default function RootLayout({ children }) {\n    return (\n        <html>\n            <body>\n                {children}\n            </body>\n        </html>\n    );\n}\n`,
+    });
+
+    expect(written["app/layout.tsx"]).toContain(
+      `                <Suspense>\n                    <DebugbarRoot />\n                </Suspense>\n            </body>`,
+    );
+    expect(written["app/layout.tsx"]).toContain(`\n    openDebugbarScope(`);
+  });
+
+  it("keeps CRLF line endings", () => {
+    const { written } = runStep(layoutStep, {
+      "app/layout.tsx": LAYOUT.replace(/\n/g, "\r\n"),
+    });
+
+    expect(written["app/layout.tsx"]).not.toMatch(/[^\r]\n/);
   });
 
   it("leaves a client layout alone", () => {

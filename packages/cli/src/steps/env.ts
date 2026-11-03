@@ -1,3 +1,4 @@
+import { eolOf } from "../source.js";
 import { applied, skipped, type Step } from "../step.js";
 
 const EXAMPLE = ".env.example";
@@ -13,8 +14,9 @@ export const envStep: Step = {
       return skipped(`${EXAMPLE} already has ${VARIABLE}`);
     }
 
-    const separator = text === "" || text.endsWith("\n") ? "" : "\n";
-    files.write(EXAMPLE, `${text}${separator}${VARIABLE}=false\n`);
+    const eol = eolOf(text);
+    const separator = text === "" || text.endsWith("\n") ? "" : eol;
+    files.write(EXAMPLE, `${text}${separator}${VARIABLE}=false${eol}`);
     return applied(`added ${VARIABLE} to ${EXAMPLE}`);
   },
 };

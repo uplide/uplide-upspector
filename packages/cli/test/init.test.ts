@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SetupError } from "../src/context.js";
 import { init } from "../src/init.js";
-import { createProject, NEXT_CONFIG, readProjectFile } from "./helpers.js";
+import { createProject, LAYOUT, NEXT_CONFIG, PACKAGE_JSON, readProjectFile } from "./helpers.js";
 
 const quiet = { install: false, allowDirty: true, log: () => {} };
 
@@ -70,10 +70,36 @@ describe("init", () => {
     expect(readProjectFile(root, "debugbar.config.ts")).toContain("process.env.NEXT_PUBLIC_API]");
   });
 
+  it("refuses a variable name that isn't an identifier", async () => {
+    const root = createProject();
+
+    await expect(init({ cwd: root, ...quiet, apiEnv: "API URL" })).rejects.toThrow(SetupError);
+    expect(existsSync(join(root, "debugbar.config.ts"))).toBe(false);
+  });
+
   it("refuses a project without the App Router", async () => {
     const root = createProject({ "pages/index.tsx": "" });
+    let asked = false;
+    const ask = async (_question: string, suggested: string) => {
+      asked = true;
+      return suggested;
+    };
 
-    await expect(init({ cwd: root, ...quiet })).rejects.toThrow(SetupError);
+    await expect(init({ cwd: root, ...quiet, ask })).rejects.toThrow(SetupError);
+    expect(asked).toBe(false);
+  });
+
+  it("finds the lockfile of the workspace the app sits in", async () => {
+    const root = createProject({
+      "pnpm-lock.yaml": "",
+      "apps/web/package.json": PACKAGE_JSON,
+      "apps/web/app/layout.tsx": LAYOUT,
+    });
+    const lines: string[] = [];
+
+    await init({ cwd: join(root, "apps/web"), ...quiet, log: (line) => lines.push(line) });
+
+    expect(lines).toContain("\nwould run: pnpm add @uplide/debugbar @uplide/debugbar-next");
   });
 
   it("refuses Next.js before 15.3", async () => {

@@ -1,9 +1,10 @@
-import { posix } from "node:path";
+import { existsSync } from "node:fs";
+import { dirname, join, posix } from "node:path";
 import type { Workspace } from "./workspace.js";
 
 export type PackageManager = "pnpm" | "yarn" | "bun" | "npm";
 
-export interface Context {
+export interface Project {
   files: Workspace;
   /** `"src"` when the app lives in `src/app`, otherwise `""`. */
   srcDir: string;
@@ -12,6 +13,9 @@ export interface Context {
   /** Extension for the files this tool creates. */
   ext: "ts" | "js";
   packageManager: PackageManager;
+}
+
+export interface Context extends Project {
   /** Env variable holding the backend's base URL. */
   apiEnv: string;
 }
@@ -24,7 +28,11 @@ interface PackageJson {
 export function readPackageJson(files: Workspace): PackageJson {
   const text = files.read("package.json");
   if (text === undefined) throw new SetupError("No package.json in this directory.");
-  return JSON.parse(text) as PackageJson;
+  try {
+    return JSON.parse(text) as PackageJson;
+  } catch (error) {
+    throw new SetupError(`package.json is not valid JSON: ${(error as Error).message}`);
+  }
 }
 
 export function dependencyVersion(pkg: PackageJson, name: string): string | undefined {
@@ -49,7 +57,19 @@ function minorOf(range: string): [number, number] | undefined {
   return [Number(match[1]), Number(match[2] ?? 0)];
 }
 
-export function detectContext(files: Workspace, apiEnv: string): Context {
+/**
+ * The package manager whose lockfile is nearest, looking up from `root` so an
+ * app inside a workspace finds the lockfile at the workspace root.
+ */
+function detectPackageManager(root: string): PackageManager {
+  for (let dir = root; ; dir = dirname(dir)) {
+    const found = LOCKFILES.find(([lockfile]) => existsSync(join(dir, lockfile)));
+    if (found) return found[1];
+    if (dirname(dir) === dir) return "npm";
+  }
+}
+
+export function detectProject(files: Workspace): Project {
   const pkg = readPackageJson(files);
   const next = dependencyVersion(pkg, "next");
   if (!next) throw new SetupError("`next` is not a dependency of this project.");
@@ -68,16 +88,12 @@ export function detectContext(files: Workspace, apiEnv: string): Context {
     throw new SetupError("No App Router root layout (app/layout or src/app/layout) found.");
   }
 
-  const packageManager =
-    LOCKFILES.find(([lockfile]) => files.exists(lockfile))?.[1] ?? "npm";
-
   return {
     files,
     srcDir,
     appDir: posix.join(srcDir, "app"),
     ext: files.exists("tsconfig.json") ? "ts" : "js",
-    packageManager,
-    apiEnv,
+    packageManager: detectPackageManager(files.root),
   };
 }
 

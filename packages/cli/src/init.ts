@@ -3,7 +3,7 @@ import { createTwoFilesPatch } from "diff";
 import {
   type Context,
   dependencyVersion,
-  detectContext,
+  detectProject,
   type PackageManager,
   readPackageJson,
   SetupError,
@@ -84,6 +84,8 @@ export async function init(options: InitOptions): Promise<InitResult> {
   }
 
   const files = new Workspace(cwd);
+  // Before asking anything, so an unsupported project fails straight away.
+  const project = detectProject(files);
   let apiEnv = options.apiEnv;
   if (!apiEnv) {
     const suggested = suggestApiEnv(files);
@@ -91,7 +93,14 @@ export async function init(options: InitOptions): Promise<InitResult> {
       ? await options.ask("Env variable with the backend's base URL", suggested)
       : suggested;
   }
-  const context: Context = detectContext(files, apiEnv);
+  // It is spliced into `process.env.<name>` in the generated config.
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(apiEnv)) {
+    throw new SetupError(`\`${apiEnv}\` is not a valid env variable name.`);
+  }
+  if (!apiEnv.startsWith("NEXT_PUBLIC_")) {
+    log(`! ${apiEnv} has no NEXT_PUBLIC_ prefix, so the browser half of the debugbar won't see it.`);
+  }
+  const context: Context = { ...project, apiEnv };
 
   const results = STEPS.map((step) => ({ step: step.name, result: step.run(context) }));
   for (const { step, result } of results) {

@@ -1,6 +1,13 @@
 import { posix } from "node:path";
 import { Node, SyntaxKind, type SourceFile } from "ts-morph";
-import { ensureNamedImports, indentUnitOf, parseSource, quoted } from "../source.js";
+import {
+  ensureNamedImports,
+  eolOf,
+  functionNamed,
+  indentUnitOf,
+  parseSource,
+  quoted,
+} from "../source.js";
 import { applied, manual, skipped, type Step } from "../step.js";
 
 const SERVER = "@uplide/debugbar-next/server";
@@ -37,15 +44,7 @@ function defaultExportedFunction(file: SourceFile) {
   if (Node.isArrowFunction(expression) || Node.isFunctionExpression(expression)) {
     return expression;
   }
-  if (!Node.isIdentifier(expression)) return undefined;
-
-  const name = expression.getText();
-  const fn = file.getFunction(name);
-  if (fn) return fn;
-  const initializer = file.getVariableDeclaration(name)?.getInitializer();
-  return Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer)
-    ? initializer
-    : undefined;
+  return Node.isIdentifier(expression) ? functionNamed(file, expression.getText()) : undefined;
 }
 
 function isClientComponent(file: SourceFile): boolean {
@@ -87,8 +86,9 @@ export const layoutStep: Step = {
     const closingStart = bodyElements[0]!.getClosingElement().getStart();
     const lineIndent = text.slice(text.lastIndexOf("\n", closingStart - 1) + 1, closingStart);
     const unit = indentUnitOf(text);
+    const eol = eolOf(text);
     const insertion = /^[ \t]*$/.test(lineIndent)
-      ? `${unit}<Suspense>\n${lineIndent}${unit}${unit}<DebugbarRoot />\n${lineIndent}${unit}</Suspense>\n${lineIndent}`
+      ? `${unit}<Suspense>${eol}${lineIndent}${unit}${unit}<DebugbarRoot />${eol}${lineIndent}${unit}</Suspense>${eol}${lineIndent}`
       : "<Suspense><DebugbarRoot /></Suspense>";
 
     // The edits below all land before `</body>`, so its offset from the end of

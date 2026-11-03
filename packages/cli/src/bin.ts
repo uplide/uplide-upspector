@@ -28,18 +28,27 @@ async function ask(question: string, suggested: string): Promise<string> {
   }
 }
 
+function parse() {
+  try {
+    return parseArgs({
+      allowPositionals: true,
+      options: {
+        "dry-run": { type: "boolean" },
+        yes: { type: "boolean", short: "y" },
+        "api-env": { type: "string" },
+        "allow-dirty": { type: "boolean" },
+        cwd: { type: "string" },
+        help: { type: "boolean", short: "h" },
+      },
+    });
+  } catch (error) {
+    // Unknown option, or one missing its value.
+    throw new SetupError(`${(error as Error).message}\n\n${USAGE}`);
+  }
+}
+
 async function main(): Promise<number> {
-  const { values, positionals } = parseArgs({
-    allowPositionals: true,
-    options: {
-      "dry-run": { type: "boolean" },
-      yes: { type: "boolean", short: "y" },
-      "api-env": { type: "string" },
-      "allow-dirty": { type: "boolean" },
-      cwd: { type: "string" },
-      help: { type: "boolean", short: "h" },
-    },
-  });
+  const { values, positionals } = parse();
 
   if (values.help || positionals[0] !== "init") {
     console.log(USAGE);

@@ -1,7 +1,7 @@
 import { posix } from "node:path";
-import { Node, type ArrowFunction, type FunctionDeclaration, type FunctionExpression } from "ts-morph";
+import { Node } from "ts-morph";
 import { configImportFrom } from "../context.js";
-import { parseSource, quoted } from "../source.js";
+import { functionNamed, parseSource, quoted } from "../source.js";
 import { applied, manual, skipped, type Step } from "../step.js";
 
 function registerBlock(configImport: string): string {
@@ -12,8 +12,6 @@ function registerBlock(configImport: string): string {
   registerDebugbar(debugbar);
 }`;
 }
-
-type RegisterFunction = FunctionDeclaration | ArrowFunction | FunctionExpression;
 
 export const instrumentationStep: Step = {
   name: "instrumentation",
@@ -33,14 +31,7 @@ export const instrumentationStep: Step = {
 
     const file = parseSource(path, text);
 
-    let register: RegisterFunction | undefined = file.getFunction("register");
-    if (!register) {
-      const initializer = file.getVariableDeclaration("register")?.getInitializer();
-      if (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer)) {
-        register = initializer;
-      }
-    }
-
+    const register = functionNamed(file, "register");
     if (!register) {
       file.addStatements(`\n${quoted(file, snippet)}`);
       files.write(path, file.getFullText());

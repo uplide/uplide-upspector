@@ -1,5 +1,5 @@
 import { Node, type Expression, type SourceFile } from "ts-morph";
-import { ensureNamedImports, parseSource } from "../source.js";
+import { ensureNamedImports, functionNamed, parseSource } from "../source.js";
 import { applied, manual, skipped, type Step } from "../step.js";
 
 const NEXT_CONFIGS = ["next.config.ts", "next.config.mts", "next.config.mjs", "next.config.js"];
@@ -12,15 +12,7 @@ export default withDebugbar(nextConfig);`;
 /** Whether the exported config is Next's function form, which `withDebugbar` cannot wrap. */
 function isFunctionConfig(file: SourceFile, expression: Expression): boolean {
   if (Node.isArrowFunction(expression) || Node.isFunctionExpression(expression)) return true;
-  if (!Node.isIdentifier(expression)) return false;
-
-  const name = expression.getText();
-  if (file.getFunction(name)) return true;
-  const initializer = file.getVariableDeclaration(name)?.getInitializer();
-  return (
-    initializer !== undefined &&
-    (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer))
-  );
+  return Node.isIdentifier(expression) && functionNamed(file, expression.getText()) !== undefined;
 }
 
 export const nextConfigStep: Step = {
