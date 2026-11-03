@@ -1,36 +1,36 @@
 import { type DynamicModule, Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { DebugbarInterceptor } from './interceptor';
-import { DEBUGBAR_OPTIONS, resolveDebugbarOptions } from './options';
-import type { DebugbarOptions } from './types';
+import { UpspectorInterceptor } from './interceptor';
+import { UPSPECTOR_OPTIONS, resolveUpspectorOptions } from './options';
+import type { UpspectorOptions } from './types';
 
 @Module({})
-export class NestDebugbarModule {
+export class NestUpspectorModule {
   /**
-   * Registers the resolved options (readable via `app.get(DEBUGBAR_OPTIONS)`)
+   * Registers the resolved options (readable via `app.get(UPSPECTOR_OPTIONS)`)
    * and the route-identity interceptor.
    *
    * The middleware is intentionally *not* registered through
    * `MiddlewareConsumer`: consumers wire it imperatively with
-   * `app.use(createDebugbarMiddleware(app.get(DEBUGBAR_OPTIONS)))`, which keeps
+   * `app.use(createUpspectorMiddleware(app.get(UPSPECTOR_OPTIONS)))`, which keeps
    * one source of truth for options and sidesteps Express-5 `forRoutes('*')`
    * path-pattern breakage.
    */
-  static forRoot(options: DebugbarOptions): DynamicModule {
+  static forRoot(options: UpspectorOptions): DynamicModule {
     return {
-      module: NestDebugbarModule,
+      module: NestUpspectorModule,
       global: true,
       providers: [
         {
-          provide: DEBUGBAR_OPTIONS,
-          useValue: resolveDebugbarOptions(options),
+          provide: UPSPECTOR_OPTIONS,
+          useValue: resolveUpspectorOptions(options),
         },
         {
           provide: APP_INTERCEPTOR,
-          useClass: DebugbarInterceptor,
+          useClass: UpspectorInterceptor,
         },
       ],
-      exports: [DEBUGBAR_OPTIONS],
+      exports: [UPSPECTOR_OPTIONS],
     };
   }
 }

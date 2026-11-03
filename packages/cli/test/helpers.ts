@@ -52,7 +52,7 @@ export default nextConfig;
  * unless `files` has its own `app/`, `src/` or `pages/`, `app/layout.tsx`.
  */
 export function createProject(files: Record<string, string> = {}): string {
-  const root = mkdtempSync(join(tmpdir(), "debugbar-cli-"));
+  const root = mkdtempSync(join(tmpdir(), "upspector-cli-"));
   const all: Record<string, string> = {
     "package.json": PACKAGE_JSON,
     "tsconfig.json": "{}",

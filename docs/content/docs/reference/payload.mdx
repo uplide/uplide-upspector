@@ -4,12 +4,12 @@ description: The shape of the object the backend attaches to each response.
 icon: Braces
 ---
 
-Types are exported from `@uplide/debugbar-protocol` (and re-exported by the
+Types are exported from `@uplide/upspector-protocol` (and re-exported by the
 other packages). This is version `1`. All times are milliseconds relative to
 the start of the request.
 
 ```ts
-interface DebugbarPayload {
+interface UpspectorPayload {
   version: number;
   requestId: string;
   startedAt: string; // ISO timestamp
@@ -28,11 +28,11 @@ interface DebugbarPayload {
     totalMs: number;
     truncated: boolean;
     duplicates: Array<{ sql: string; count: number }>;
-    queries: DebugbarQueryEntry[];
+    queries: UpspectorQueryEntry[];
   };
-  http: { count: number; totalMs: number; truncated: boolean; calls: DebugbarHttpEntry[] };
-  cache: { count: number; totalMs: number; truncated: boolean; operations: DebugbarCacheEntry[] };
-  logs: { count: number; truncated: boolean; entries: DebugbarLogEntry[] };
+  http: { count: number; totalMs: number; truncated: boolean; calls: UpspectorHttpEntry[] };
+  cache: { count: number; totalMs: number; truncated: boolean; operations: UpspectorCacheEntry[] };
+  logs: { count: number; truncated: boolean; entries: UpspectorLogEntry[] };
   memory: { rssBytes: number; heapUsedBytes: number; heapUsedDeltaBytes: number };
 }
 ```
@@ -40,7 +40,7 @@ interface DebugbarPayload {
 ## Entries
 
 ```ts
-interface DebugbarQueryEntry {
+interface UpspectorQueryEntry {
   index: number;
   kind: 'query' | 'execute' | 'begin' | 'script';
   sql: string;
@@ -52,7 +52,7 @@ interface DebugbarQueryEntry {
   error?: string;
 }
 
-interface DebugbarHttpEntry {
+interface UpspectorHttpEntry {
   method: string;
   url: string;
   statusCode?: number;
@@ -61,7 +61,7 @@ interface DebugbarHttpEntry {
   error?: string;
 }
 
-interface DebugbarCacheEntry {
+interface UpspectorCacheEntry {
   command: string;
   key?: string;
   argCount: number;
@@ -70,7 +70,7 @@ interface DebugbarCacheEntry {
   error?: string;
 }
 
-interface DebugbarLogEntry {
+interface UpspectorLogEntry {
   level: 'log' | 'error' | 'warn' | 'debug' | 'verbose' | 'fatal';
   message: string;
   context?: string;
@@ -84,10 +84,10 @@ When the snapshot itself fails, the key holds this instead. A snapshot bug
 never turns a successful response into a `500`.
 
 ```ts
-interface DebugbarErrorPayload {
+interface UpspectorErrorPayload {
   version: number;
   error: string;
 }
 ```
 
-Use `isDebugbarPayload` and `isDebugbarErrorPayload` to tell them apart.
+Use `isUpspectorPayload` and `isUpspectorErrorPayload` to tell them apart.

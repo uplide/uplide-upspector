@@ -7,8 +7,8 @@
     "start": "next start --port 4200"
   },
   "dependencies": {
-    "@uplide/debugbar": "workspace:*",
-    "@uplide/debugbar-next": "workspace:*",
+    "@uplide/upspector": "workspace:*",
+    "@uplide/upspector-next": "workspace:*",
     "axios": "^1.12.2",
     "next": "16.4.2",
     "react": "19.2.4",

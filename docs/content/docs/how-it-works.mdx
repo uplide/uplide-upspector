@@ -6,7 +6,7 @@ icon: Cable
 
 The backend and frontend never talk to each other directly. The payload rides
 on the responses the app already makes, under a contract defined in
-`@uplide/debugbar-protocol`.
+`@uplide/upspector-protocol`.
 
 ## Request lifecycle
 
@@ -18,7 +18,7 @@ on the responses the app already makes, under a contract defined in
 3. The **interceptor** adds route identity (`controller`, `handler`, `route`)
    and the handler span.
 4. When the app calls `res.json`, the middleware snapshots the collector and
-   adds it to the body under the response key, then sets the `x-debugbar`
+   adds it to the body under the response key, then sets the `x-upspector`
    header.
 5. On the frontend, a **capture adapter** (axios interceptor or `fetch`
    wrapper) removes the key from the body — your code never sees it — and
@@ -27,9 +27,9 @@ on the responses the app already makes, under a contract defined in
 ## The contract
 
 - The payload rides under a top-level key of every **plain-object** JSON
-  response. The default key is `debugbar`; it is configurable on both sides
+  response. The default key is `upspector`; it is configurable on both sides
   and the two must stay equal.
-- Every response that carries it also has `x-debugbar: <version>`. The `fetch`
+- Every response that carries it also has `x-upspector: <version>`. The `fetch`
   adapter reads a body only when that header is present, so any other response
   — streams, files, an API proxy passing bytes through — is never buffered.
 - When the backend's snapshot itself fails, the key holds
@@ -38,7 +38,7 @@ on the responses the app already makes, under a contract defined in
 ```json title="GET /products"
 {
   "data": [{ "id": 1, "name": "Keyboard" }],
-  "debugbar": {
+  "upspector": {
     "version": 1,
     "requestId": "…",
     "durationMs": 18.4,
@@ -54,14 +54,14 @@ The full shape is documented in the [payload reference](/docs/reference/payload)
 
 ```ts
 import {
-  DEBUGBAR_HEADER, // "x-debugbar"
-  DEBUGBAR_PAYLOAD_VERSION, // 1
-  DEFAULT_RESPONSE_KEY, // "debugbar"
-  isDebugbarPayload,
-  isDebugbarErrorPayload,
-  takeDebugbarPayload,
-} from '@uplide/debugbar-protocol';
+  UPSPECTOR_HEADER, // "x-upspector"
+  UPSPECTOR_PAYLOAD_VERSION, // 1
+  DEFAULT_RESPONSE_KEY, // "upspector"
+  isUpspectorPayload,
+  isUpspectorErrorPayload,
+  takeUpspectorPayload,
+} from '@uplide/upspector-protocol';
 ```
 
 Field names are a public contract: changes are additive only, and
-`DEBUGBAR_PAYLOAD_VERSION` is bumped when the shape changes.
+`UPSPECTOR_PAYLOAD_VERSION` is bumped when the shape changes.

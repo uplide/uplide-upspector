@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import type { Observable } from 'rxjs';
 import { finalize } from 'rxjs/operators';
-import { getDebugbarCollector } from './context';
+import { getUpspectorCollector } from './context';
 
 /**
  * Adds route identity and the handler span. It never touches the payload: the
@@ -14,13 +14,13 @@ import { getDebugbarCollector } from './context';
  * middleware's `res.json` patch injects the snapshot.
  */
 @Injectable()
-export class DebugbarInterceptor implements NestInterceptor {
+export class UpspectorInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     if (context.getType() !== 'http') {
       return next.handle();
     }
 
-    const collector = getDebugbarCollector();
+    const collector = getUpspectorCollector();
     if (!collector) {
       return next.handle();
     }

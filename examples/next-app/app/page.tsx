@@ -1,4 +1,4 @@
-import { measureServerComponent } from "@uplide/debugbar-next/server";
+import { measureServerComponent } from "@uplide/upspector-next/server";
 import { API_BASE_URL, type Product } from "@/lib/api";
 import { ClientPanel } from "./client-panel";
 
@@ -15,9 +15,9 @@ export default measureServerComponent("HomePage", async function HomePage() {
 
   return (
     <main>
-      <h1>debugbar example</h1>
+      <h1>upspector example</h1>
       <p>
-        This list was rendered on the server. Open the debugbar toolbar in the
+        This list was rendered on the server. Open the Upspector toolbar in the
         bottom-right corner: the SSR request and its SQL (including an N+1)
         are there.
       </p>

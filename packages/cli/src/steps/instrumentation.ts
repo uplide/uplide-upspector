@@ -6,10 +6,10 @@ import { applied, manual, skipped, type Step } from "../step.js";
 
 function registerBlock(configImport: string): string {
   return `if (process.env.NEXT_RUNTIME === "nodejs") {
-  const { registerDebugbar } = await import("@uplide/debugbar-next/server");
-  const { default: debugbar } = await import("${configImport}");
+  const { registerUpspector } = await import("@uplide/upspector-next/server");
+  const { default: upspector } = await import("${configImport}");
 
-  registerDebugbar(debugbar);
+  registerUpspector(upspector);
 }`;
 }
 
@@ -27,7 +27,7 @@ export const instrumentationStep: Step = {
       files.write(path, `${snippet}\n`);
       return applied(`created ${path}`);
     }
-    if (text.includes("registerDebugbar")) return skipped(`${path} already registers the debugbar`);
+    if (text.includes("registerUpspector")) return skipped(`${path} already registers Upspector`);
 
     const file = parseSource(path, text);
 
@@ -47,7 +47,7 @@ export const instrumentationStep: Step = {
     body.insertStatements(0, `${quoted(file, block)}\n`);
     if (!register.isAsync()) register.setIsAsync(true);
     files.write(path, file.getFullText());
-    return applied(`registered the debugbar in ${path}`);
+    return applied(`registered the Upspector in ${path}`);
   },
 };
 
@@ -64,30 +64,30 @@ export const instrumentationClientStep: Step = {
     if (text === undefined) {
       files.write(
         path,
-        `import { installDebugbarClient } from "@uplide/debugbar-next/client";
-import debugbar from "${configImport}";
+        `import { installUpspectorClient } from "@uplide/upspector-next/client";
+import upspector from "${configImport}";
 
-installDebugbarClient(debugbar);
+installUpspectorClient(upspector);
 `,
       );
       return applied(`created ${path}`);
     }
-    if (text.includes("installDebugbarClient")) {
-      return skipped(`${path} already installs the debugbar client`);
+    if (text.includes("installUpspectorClient")) {
+      return skipped(`${path} already installs the Upspector client`);
     }
 
     const file = parseSource(path, text);
-    const name = /\bdebugbar\b/.test(text) ? "debugbarConfig" : "debugbar";
+    const name = /\bupspector\b/.test(text) ? "upspectorConfig" : "upspector";
     const imports = file.getImportDeclarations().length;
     file.insertImportDeclarations(imports, [
-      { moduleSpecifier: "@uplide/debugbar-next/client", namedImports: ["installDebugbarClient"] },
+      { moduleSpecifier: "@uplide/upspector-next/client", namedImports: ["installUpspectorClient"] },
       { moduleSpecifier: configImport, defaultImport: name },
     ]);
     // Right after the imports: the file runs before hydration, and the client
     // has to be in place before anything below it fetches.
     const firstStatement = file.getImportDeclarations().length;
-    file.insertStatements(firstStatement, `\ninstallDebugbarClient(${name});`);
+    file.insertStatements(firstStatement, `\ninstallUpspectorClient(${name});`);
     files.write(path, file.getFullText());
-    return applied(`installed the debugbar client in ${path}`);
+    return applied(`installed the Upspector client in ${path}`);
   },
 };

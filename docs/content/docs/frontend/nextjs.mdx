@@ -5,13 +5,13 @@ icon: Layers
 ---
 
 ```bash
-pnpm add @uplide/debugbar @uplide/debugbar-next
+pnpm add @uplide/upspector @uplide/upspector-next
 ```
 
 Requires Next.js 15.3 or newer and React 19.
 
 <Callout title="Automatic setup">
-  `pnpm dlx @uplide/debugbar-cli init` installs the packages and makes the
+  `pnpm dlx @uplide/upspector-cli init` installs the packages and makes the
   changes below for you. See [Automatic setup](/docs/frontend/cli).
 </Callout>
 
@@ -25,11 +25,11 @@ browser `fetch` to the backend is captured.
 
 One config, used by the server and the browser.
 
-```ts title="debugbar.config.ts"
-import { defineNextDebugbarConfig } from '@uplide/debugbar-next';
+```ts title="upspector.config.ts"
+import { defineNextUpspectorConfig } from '@uplide/upspector-next';
 
-export default defineNextDebugbarConfig({
-  enabled: process.env.NEXT_PUBLIC_DEBUGBAR === 'true',
+export default defineNextUpspectorConfig({
+  enabled: process.env.NEXT_PUBLIC_UPSPECTOR === 'true',
   backend: {
     origins: [process.env.NEXT_PUBLIC_API_BASE_URL],
     proxyPath: '/api/proxy', // optional same-origin proxy the browser uses
@@ -47,17 +47,17 @@ is same-origin and its path starts with `backend.proxyPath`.
 
 In development, Next serves Server Component fetches from cache across HMR —
 even `no-store` ones — so after an edit the backend is never called and the bar
-stays empty. `withDebugbar` turns that cache off while the debugbar is enabled
+stays empty. `withUpspector` turns that cache off while Upspector is enabled
 and returns your config untouched otherwise.
 
 ```ts title="next.config.ts"
-import { withDebugbar } from '@uplide/debugbar-next/config';
+import { withUpspector } from '@uplide/upspector-next/config';
 
-export default withDebugbar(nextConfig);
-// or: withDebugbar(nextConfig, { configFile: 'config/debugbar.ts' })
+export default withUpspector(nextConfig);
+// or: withUpspector(nextConfig, { configFile: 'config/upspector.ts' })
 ```
 
-By default it reads the first `debugbar.config.{ts,mts,js,mjs}` in the project
+By default it reads the first `upspector.config.{ts,mts,js,mjs}` in the project
 root.
 
 </Step>
@@ -71,8 +71,8 @@ dedup and Data Cache and only sees real network calls.
 ```ts title="instrumentation.ts"
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
-    const { registerDebugbar } = await import('@uplide/debugbar-next/server');
-    registerDebugbar((await import('./debugbar.config')).default);
+    const { registerUpspector } = await import('@uplide/upspector-next/server');
+    registerUpspector((await import('./upspector.config')).default);
   }
 }
 ```
@@ -86,10 +86,10 @@ Must be synchronous: only synchronous code here is guaranteed to finish before
 hydration.
 
 ```ts title="instrumentation-client.ts"
-import { installDebugbarClient } from '@uplide/debugbar-next/client';
-import debugbar from './debugbar.config';
+import { installUpspectorClient } from '@uplide/upspector-next/client';
+import upspector from './upspector.config';
 
-installDebugbarClient(debugbar);
+installUpspectorClient(upspector);
 ```
 
 </Step>
@@ -97,24 +97,24 @@ installDebugbarClient(debugbar);
 
 ### Root layout
 
-Call `openDebugbarScope` **before the first `await`** — Next starts rendering
+Call `openUpspectorScope` **before the first `await`** — Next starts rendering
 child segments while a parent layout is suspended, so anything awaited first
-would let the page's own requests go uncaptured. Render `DebugbarRoot` after
+would let the page's own requests go uncaptured. Render `UpspectorRoot` after
 `children`, inside `Suspense`, so it streams last.
 
 ```tsx title="app/layout.tsx"
 import { Suspense } from 'react';
-import { DebugbarRoot, openDebugbarScope } from '@uplide/debugbar-next/server';
+import { UpspectorRoot, openUpspectorScope } from '@uplide/upspector-next/server';
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  openDebugbarScope({ profile: process.env.DEBUGBAR_RENDER_PROFILE === 'true' });
+  openUpspectorScope({ profile: process.env.UPSPECTOR_RENDER_PROFILE === 'true' });
 
   return (
     <html lang="en">
       <body>
         {children}
         <Suspense>
-          <DebugbarRoot />
+          <UpspectorRoot />
         </Suspense>
       </body>
     </html>
@@ -133,10 +133,10 @@ streaming backend responses) and middleware are left alone.
 To skip a single call:
 
 ```ts
-await fetch(`${API}/products`, { debugbar: false });
+await fetch(`${API}/products`, { upspector: false });
 ```
 
-## `DebugbarRoot` props
+## `UpspectorRoot` props
 
 <TypeTable
   type={{
@@ -152,7 +152,7 @@ await fetch(`${API}/products`, { debugbar: false });
 
 ## Config reference
 
-`defineNextDebugbarConfig` takes everything in the
+`defineNextUpspectorConfig` takes everything in the
 [shared config](/docs/reference/config) except `match`, plus `backend`:
 
 <TypeTable

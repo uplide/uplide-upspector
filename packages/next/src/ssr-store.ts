@@ -1,10 +1,10 @@
-import type { DebugbarEntry } from "@uplide/debugbar";
+import type { UpspectorEntry } from "@uplide/upspector";
 import { cache } from "react";
 
-export interface DebugbarSsrStore {
-  /** Set by `openDebugbarScope()`; nothing is captured while false. */
+export interface UpspectorSsrStore {
+  /** Set by `openUpspectorScope()`; nothing is captured while false. */
   active: boolean;
-  entries: DebugbarEntry[];
+  entries: UpspectorEntry[];
   pending: Set<Promise<void>>;
   /** Captures started so far; tells a waiter whether new work arrived. */
   started: number;
@@ -16,7 +16,7 @@ export interface DebugbarSsrStore {
  * handlers, middleware) it hands out a fresh, inactive store on every call,
  * which is what keeps those requests uncaptured.
  */
-export const getDebugbarSsrStore = cache<() => DebugbarSsrStore>(() => ({
+export const getUpspectorSsrStore = cache<() => UpspectorSsrStore>(() => ({
   active: false,
   entries: [],
   pending: new Set(),
@@ -29,15 +29,15 @@ export const getDebugbarSsrStore = cache<() => DebugbarSsrStore>(() => ({
  * RSC side publishes its accessor here when a scope opens, and the wrapper
  * reads it back on every call, inside the render's own async context.
  */
-const HOST = Symbol.for("@uplide/debugbar-next/ssr-store");
+const HOST = Symbol.for("@uplide/upspector-next/ssr-store");
 
-type HostHolder = { [HOST]?: () => DebugbarSsrStore };
+type HostHolder = { [HOST]?: () => UpspectorSsrStore };
 
 export function publishSsrStore(): void {
-  (globalThis as HostHolder)[HOST] = getDebugbarSsrStore;
+  (globalThis as HostHolder)[HOST] = getUpspectorSsrStore;
 }
 
-export function currentSsrStore(): DebugbarSsrStore | undefined {
+export function currentSsrStore(): UpspectorSsrStore | undefined {
   return (globalThis as HostHolder)[HOST]?.();
 }
 
@@ -45,6 +45,6 @@ export function isSsrCaptureActive(): boolean {
   return currentSsrStore()?.active ?? false;
 }
 
-export function pushSsrEntry(entry: DebugbarEntry): void {
+export function pushSsrEntry(entry: UpspectorEntry): void {
   currentSsrStore()?.entries.push(entry);
 }

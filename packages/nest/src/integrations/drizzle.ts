@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { getDebugbarCollector } from '../context';
+import { getUpspectorCollector } from '../context';
 import { resolveCallSite } from '../sanitize';
-import type { DebugbarQueryKind, ResolvedDebugbarOptions } from '../types';
+import type { UpspectorQueryKind, ResolvedUpspectorOptions } from '../types';
 
 /**
  * Drizzle's `Query`. Declared structurally so this package never imports
@@ -29,7 +29,7 @@ interface DrizzleDatabaseLike {
   _?: { session?: DrizzleSessionLike };
 }
 
-const INSTRUMENTED = Symbol.for('uplide.debugbar.drizzle');
+const INSTRUMENTED = Symbol.for('uplide.upspector.drizzle');
 
 /** Drizzle internals sit between the app frame and the prepared query. */
 const CALL_SITE_STACK_LIMIT = 40;
@@ -47,7 +47,7 @@ const activeQuery = new AsyncLocalStorage<true>();
 /** Set inside a `transaction` callback, which Drizzle runs on a fresh session. */
 const activeTransaction = new AsyncLocalStorage<true>();
 
-function classify(sql: string): DebugbarQueryKind {
+function classify(sql: string): UpspectorQueryKind {
   const head = sql.trimStart().slice(0, 20).toLowerCase();
   if (head.startsWith('begin') || head.startsWith('start transaction')) {
     return 'begin';
@@ -59,11 +59,11 @@ function classify(sql: string): DebugbarQueryKind {
 }
 
 function timeCall(
-  options: ResolvedDebugbarOptions,
+  options: ResolvedUpspectorOptions,
   query: DrizzleQueryLike,
   run: () => unknown,
 ): unknown {
-  const collector = getDebugbarCollector();
+  const collector = getUpspectorCollector();
   if (!collector || activeQuery.getStore()) {
     return run();
   }
@@ -123,7 +123,7 @@ function timeCall(
 function wrapPreparedQuery(
   prepared: PreparedQueryLike,
   query: DrizzleQueryLike,
-  options: ResolvedDebugbarOptions,
+  options: ResolvedUpspectorOptions,
 ): PreparedQueryLike {
   const methods =
     typeof prepared.run === 'function' ? SQLITE_METHODS : DEFAULT_METHODS;
@@ -156,7 +156,7 @@ function wrapPreparedQuery(
  */
 export function instrumentDrizzleDatabase<T extends object>(
   db: T,
-  options: ResolvedDebugbarOptions,
+  options: ResolvedUpspectorOptions,
 ): T {
   if (!options.enabled) {
     return db;

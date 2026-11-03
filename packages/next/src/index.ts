@@ -1,13 +1,13 @@
 import {
-  type DebugbarConfig,
-  defineDebugbarConfig,
-  type ResolvedDebugbarConfig,
-} from "@uplide/debugbar";
+  type UpspectorConfig,
+  defineUpspectorConfig,
+  type ResolvedUpspectorConfig,
+} from "@uplide/upspector";
 
-export { resolveDebugbarEnabled } from "@uplide/debugbar";
-export type { DebugbarConfig, ResolvedDebugbarConfig } from "@uplide/debugbar";
+export { resolveUpspectorEnabled } from "@uplide/upspector";
+export type { UpspectorConfig, ResolvedUpspectorConfig } from "@uplide/upspector";
 
-export interface NextDebugbarConfig extends Omit<DebugbarConfig, "match"> {
+export interface NextUpspectorConfig extends Omit<UpspectorConfig, "match"> {
   backend: {
     /** Backend origins the server (and a CORS-enabled browser) calls directly. */
     origins: readonly (string | undefined)[];
@@ -29,13 +29,13 @@ function originOf(value: string): string | null {
 }
 
 /**
- * One config for both runtimes: pass the same object to `registerDebugbar`
- * (server) and `installDebugbarClient` (browser).
+ * One config for both runtimes: pass the same object to `registerUpspector`
+ * (server) and `installUpspectorClient` (browser).
  */
-export function defineNextDebugbarConfig({
+export function defineNextUpspectorConfig({
   backend,
   ...config
-}: NextDebugbarConfig): ResolvedDebugbarConfig {
+}: NextUpspectorConfig): ResolvedUpspectorConfig {
   const origins = new Set(
     backend.origins.flatMap((value) => {
       const origin = value ? originOf(value) : null;
@@ -44,7 +44,7 @@ export function defineNextDebugbarConfig({
   );
   const proxyPath = backend.proxyPath;
 
-  return defineDebugbarConfig({
+  return defineUpspectorConfig({
     ...config,
     match: (url) => {
       const parsed = new URL(url);

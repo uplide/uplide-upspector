@@ -1,8 +1,8 @@
 import { ConsoleLogger, type LogLevel } from '@nestjs/common';
-import { getDebugbarCollector } from './context';
-import type { DebugbarLogLevel } from './types';
+import { getUpspectorCollector } from './context';
+import type { UpspectorLogLevel } from './types';
 
-const DEBUGBAR_LOG_LEVELS: Record<string, DebugbarLogLevel> = {
+const UPSPECTOR_LOG_LEVELS: Record<string, UpspectorLogLevel> = {
   log: 'log',
   error: 'error',
   warn: 'warn',
@@ -20,7 +20,7 @@ const DEBUGBAR_LOG_LEVELS: Record<string, DebugbarLogLevel> = {
  * resolved (and only when the level is enabled), so console output stays
  * byte-identical to plain `ConsoleLogger`.
  */
-export class DebugbarConsoleLogger extends ConsoleLogger {
+export class UpspectorConsoleLogger extends ConsoleLogger {
   protected printMessages(
     messages: unknown[],
     context?: string,
@@ -36,12 +36,12 @@ export class DebugbarConsoleLogger extends ConsoleLogger {
       errorStack,
     );
 
-    const collector = getDebugbarCollector();
+    const collector = getUpspectorCollector();
     if (!collector) {
       return;
     }
 
-    const level = DEBUGBAR_LOG_LEVELS[logLevel ?? 'log'] ?? 'log';
+    const level = UPSPECTOR_LOG_LEVELS[logLevel ?? 'log'] ?? 'log';
     for (const message of messages) {
       collector.recordLog({
         level,

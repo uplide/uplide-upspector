@@ -1,10 +1,10 @@
 import {
-  type DebugbarConfig,
+  type UpspectorConfig,
   EVENTS_ENDPOINT,
-  forwardDebugbarEntries,
-  setDebugbarConfig,
-} from "@uplide/debugbar";
-import { installFetchCapture } from "@uplide/debugbar/fetch";
+  forwardUpspectorEntries,
+  setUpspectorConfig,
+} from "@uplide/upspector";
+import { installFetchCapture } from "@uplide/upspector/fetch";
 
 /**
  * Call at the top level of `instrumentation-client.ts`, synchronously: only
@@ -12,17 +12,17 @@ import { installFetchCapture } from "@uplide/debugbar/fetch";
  * what puts the `window.fetch` wrapper in place before the first request.
  *
  * With `mcp` on, captured entries are also forwarded to the `events` endpoint
- * of the debugbar route, for its `mcp` endpoint to hand to an agent.
+ * of the Upspector route, for its `mcp` endpoint to hand to an agent.
  *
  * Returns an uninstall function.
  */
-export function installDebugbarClient(config: DebugbarConfig): () => void {
-  const resolved = setDebugbarConfig(config);
+export function installUpspectorClient(config: UpspectorConfig): () => void {
+  const resolved = setUpspectorConfig(config);
   if (!resolved.enabled) return () => {};
 
   const uninstall = installFetchCapture({ source: "csr" });
   const stopForwarding = resolved.mcp
-    ? forwardDebugbarEntries(EVENTS_ENDPOINT)
+    ? forwardUpspectorEntries(EVENTS_ENDPOINT)
     : () => {};
 
   return () => {

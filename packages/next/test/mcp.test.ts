@@ -1,4 +1,4 @@
-import { DEBUGBAR_PAYLOAD_VERSION, type DebugbarEntry } from "@uplide/debugbar";
+import { UPSPECTOR_PAYLOAD_VERSION, type UpspectorEntry } from "@uplide/upspector";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clearAgentBuffer,
@@ -7,7 +7,7 @@ import {
   getAgentBuffer,
 } from "../src/mcp.js";
 
-function entry(id: string, overrides: Partial<DebugbarEntry> = {}): DebugbarEntry {
+function entry(id: string, overrides: Partial<UpspectorEntry> = {}): UpspectorEntry {
   return {
     id,
     source: "csr",
@@ -16,7 +16,7 @@ function entry(id: string, overrides: Partial<DebugbarEntry> = {}): DebugbarEntr
     statusCode: 200,
     capturedAt: "2026-11-03T00:00:00.000Z",
     payload: {
-      version: DEBUGBAR_PAYLOAD_VERSION,
+      version: UPSPECTOR_PAYLOAD_VERSION,
       requestId: id,
       startedAt: "2026-11-03T00:00:00.000Z",
       durationMs: 12,
@@ -72,7 +72,7 @@ const mcp = createMcpHandler();
 
 async function rpc(method: string, params: Record<string, unknown> = {}) {
   const response = await mcp.POST(
-    post("/api/debugbar/mcp", { jsonrpc: "2.0", id: 1, method, params }),
+    post("/api/upspector/mcp", { jsonrpc: "2.0", id: 1, method, params }),
   );
   return (await response.json()) as {
     result?: any;
@@ -90,7 +90,7 @@ async function callTool(name: string, args: Record<string, unknown> = {}) {
 
 function forward(tabId: string, items: unknown[]) {
   return events.POST(
-    post("/api/debugbar/events", { tabId, items }, { origin: "http://localhost:3000" }),
+    post("/api/upspector/events", { tabId, items }, { origin: "http://localhost:3000" }),
   );
 }
 
@@ -121,7 +121,7 @@ describe("createEventsHandler", () => {
   it("refuses another site's page", async () => {
     const response = await events.POST(
       post(
-        "/api/debugbar/events",
+        "/api/upspector/events",
         { tabId: "t", items: [] },
         { origin: "https://evil.example" },
       ),
@@ -159,7 +159,7 @@ describe("createMcpHandler", () => {
 
   it("acknowledges notifications without a body", async () => {
     const response = await mcp.POST(
-      post("/api/debugbar/mcp", {
+      post("/api/upspector/mcp", {
         jsonrpc: "2.0",
         method: "notifications/initialized",
       }),
@@ -170,7 +170,7 @@ describe("createMcpHandler", () => {
 
   it("refuses a non-loopback host", async () => {
     const response = await mcp.POST(
-      post("/api/debugbar/mcp", { jsonrpc: "2.0", id: 1, method: "ping" }, {
+      post("/api/upspector/mcp", { jsonrpc: "2.0", id: 1, method: "ping" }, {
         host: "attacker.example",
       }),
     );

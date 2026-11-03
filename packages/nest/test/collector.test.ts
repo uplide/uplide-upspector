@@ -4,16 +4,16 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 
 import {
-  DebugbarCollector,
-  resolveDebugbarOptions,
+  UpspectorCollector,
+  resolveUpspectorOptions,
   sanitizeParamValue,
   truncateText,
 } from '../src/index';
 
 function makeCollector(overrides = {}) {
-  const options = resolveDebugbarOptions({ enabled: true, ...overrides });
+  const options = resolveUpspectorOptions({ enabled: true, ...overrides });
 
-  return new DebugbarCollector(options, {
+  return new UpspectorCollector(options, {
     requestId: 'test-request',
     method: 'GET',
     url: '/probe',

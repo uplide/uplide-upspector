@@ -1,16 +1,16 @@
 // The injection contract: the payload rides only on plain-object envelopes,
-// and every response that carries it is flagged with the `x-debugbar` header.
+// and every response that carries it is flagged with the `x-upspector` header.
 
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
 
 import {
-  createDebugbarMiddleware,
-  DEBUGBAR_HEADER,
-  DEBUGBAR_PAYLOAD_VERSION,
-  isDebugbarErrorPayload,
-  isDebugbarPayload,
-  resolveDebugbarOptions,
+  createUpspectorMiddleware,
+  UPSPECTOR_HEADER,
+  UPSPECTOR_PAYLOAD_VERSION,
+  isUpspectorErrorPayload,
+  isUpspectorPayload,
+  resolveUpspectorOptions,
 } from '../src/index';
 
 function makeResponse() {
@@ -34,8 +34,8 @@ function makeResponse() {
 }
 
 function run(body: unknown, overrides = {}) {
-  const middleware = createDebugbarMiddleware(
-    resolveDebugbarOptions({ enabled: true, ...overrides }),
+  const middleware = createUpspectorMiddleware(
+    resolveUpspectorOptions({ enabled: true, ...overrides }),
   );
   const response = makeResponse();
 
@@ -50,10 +50,10 @@ test('plain-object envelopes get the payload and the header', () => {
   const response = run({ data: 1 });
   const sent = response.sent() as Record<string, unknown>;
 
-  assert.equal(isDebugbarPayload(sent.debugbar), true);
+  assert.equal(isUpspectorPayload(sent.upspector), true);
   assert.equal(
-    response.headers[DEBUGBAR_HEADER],
-    String(DEBUGBAR_PAYLOAD_VERSION),
+    response.headers[UPSPECTOR_HEADER],
+    String(UPSPECTOR_PAYLOAD_VERSION),
   );
 });
 
@@ -62,7 +62,7 @@ test('arrays and strings stay untouched and unflagged', () => {
     const response = run(body);
 
     assert.deepEqual(response.sent(), body);
-    assert.equal(response.headers[DEBUGBAR_HEADER], undefined);
+    assert.equal(response.headers[UPSPECTOR_HEADER], undefined);
   }
 });
 
@@ -72,13 +72,13 @@ test('a custom response key is honoured', () => {
     unknown
   >;
 
-  assert.equal(isDebugbarPayload(sent._dbg), true);
-  assert.equal('debugbar' in sent, false);
+  assert.equal(isUpspectorPayload(sent._dbg), true);
+  assert.equal('upspector' in sent, false);
 });
 
 test('a failing snapshot still flags the response with an error payload', () => {
-  const middleware = createDebugbarMiddleware(
-    resolveDebugbarOptions({ enabled: true }),
+  const middleware = createUpspectorMiddleware(
+    resolveUpspectorOptions({ enabled: true }),
   );
   const broken = makeResponse();
   let statusReads = 0;
@@ -97,13 +97,13 @@ test('a failing snapshot still flags the response with an error payload', () => 
 
   const sent = broken.sent() as Record<string, unknown>;
   assert.ok(statusReads > 0);
-  assert.equal(isDebugbarErrorPayload(sent.debugbar), true);
-  assert.equal(broken.headers[DEBUGBAR_HEADER], String(DEBUGBAR_PAYLOAD_VERSION));
+  assert.equal(isUpspectorErrorPayload(sent.upspector), true);
+  assert.equal(broken.headers[UPSPECTOR_HEADER], String(UPSPECTOR_PAYLOAD_VERSION));
 });
 
 test('disabled middleware passes through', () => {
   const response = run({ data: 1 }, { enabled: false });
 
   assert.deepEqual(response.sent(), { data: 1 });
-  assert.equal(response.headers[DEBUGBAR_HEADER], undefined);
+  assert.equal(response.headers[UPSPECTOR_HEADER], undefined);
 });

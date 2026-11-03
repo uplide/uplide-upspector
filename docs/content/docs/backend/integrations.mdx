@@ -14,11 +14,11 @@ With Prisma 7, wrap the **driver adapter**, not the client:
 
 ```ts title="src/prisma.service.ts"
 import { PrismaPg } from '@prisma/adapter-pg';
-import { instrumentPrismaDriverAdapter } from '@uplide/debugbar-nest';
-import { debugbarOptions } from './debugbar';
+import { instrumentPrismaDriverAdapter } from '@uplide/upspector-nest';
+import { upspectorOptions } from './upspector';
 
 new PrismaClient({
-  adapter: instrumentPrismaDriverAdapter(new PrismaPg(pool), debugbarOptions),
+  adapter: instrumentPrismaDriverAdapter(new PrismaPg(pool), upspectorOptions),
 });
 ```
 
@@ -34,12 +34,12 @@ Wrap the database returned by `drizzle(...)`. It works with every driver
 
 ```ts title="src/db.ts"
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { instrumentDrizzleDatabase } from '@uplide/debugbar-nest';
-import { debugbarOptions } from './debugbar';
+import { instrumentDrizzleDatabase } from '@uplide/upspector-nest';
+import { upspectorOptions } from './upspector';
 
 export const db = instrumentDrizzleDatabase(
   drizzle(pool, { schema }),
-  debugbarOptions,
+  upspectorOptions,
 );
 ```
 
@@ -60,7 +60,7 @@ transaction API (`pglite`, `better-sqlite3`) show just the statements inside.
 ## Redis (ioredis)
 
 ```ts
-import { instrumentRedisClient } from '@uplide/debugbar-nest';
+import { instrumentRedisClient } from '@uplide/upspector-nest';
 
 const redis = instrumentRedisClient(new Redis(process.env.REDIS_URL));
 ```
@@ -74,7 +74,7 @@ import axios from 'axios';
 import {
   installAxiosInstrumentation,
   installFetchInstrumentation,
-} from '@uplide/debugbar-nest';
+} from '@uplide/upspector-nest';
 
 installAxiosInstrumentation(axios); // default instance + every axios.create()
 installFetchInstrumentation(); // patches globalThis.fetch
@@ -87,15 +87,15 @@ covered.
 
 ## Logs
 
-`DebugbarConsoleLogger` extends Nest's `ConsoleLogger` and mirrors each printed
+`UpspectorConsoleLogger` extends Nest's `ConsoleLogger` and mirrors each printed
 line into the current request. Console output stays byte-identical, and only
 enabled log levels are captured.
 
 ```ts
 const app = await NestFactory.create(AppModule, {
-  logger: new DebugbarConsoleLogger(),
+  logger: new UpspectorConsoleLogger(),
 });
-// or later: app.useLogger(new DebugbarConsoleLogger());
+// or later: app.useLogger(new UpspectorConsoleLogger());
 ```
 
 ## Custom spans
@@ -104,9 +104,9 @@ Time work the built-in integrations do not see — queue producers, background
 fan-out inside a request:
 
 ```ts
-import { getDebugbarCollector } from '@uplide/debugbar-nest';
+import { getUpspectorCollector } from '@uplide/upspector-nest';
 
-const end = getDebugbarCollector()?.startSpan('pricing:recalculate');
+const end = getUpspectorCollector()?.startSpan('pricing:recalculate');
 try {
   await recalculatePrices();
 } finally {

@@ -16,28 +16,28 @@ The picker reads `data-insp-path` attributes from
 development builds, so add that plugin to your Next config first. Then add
 the route:
 
-```ts title="app/api/debugbar/[endpoint]/route.ts"
-import { createDebugbarHandler } from '@uplide/debugbar-next/route';
+```ts title="app/api/upspector/[endpoint]/route.ts"
+import { createUpspectorHandler } from '@uplide/upspector-next/route';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const { POST, GET, DELETE } = createDebugbarHandler();
+export const { POST, GET, DELETE } = createUpspectorHandler();
 ```
 
-The one route serves `/api/debugbar/inspect` and the
+The one route serves `/api/upspector/inspect` and the
 [MCP endpoints](/docs/frontend/mcp). To mount the picker elsewhere, export
-`POST` from `createInspectHandler` (`@uplide/debugbar-next/inspect`) on that
+`POST` from `createInspectHandler` (`@uplide/upspector-next/inspect`) on that
 route and point the `inspectEndpoint` config field at it.
 
 ## Options
 
-`createDebugbarHandler` passes these to the inspector; `allowedHosts` also
+`createUpspectorHandler` passes these to the inspector; `allowedHosts` also
 applies to the MCP endpoints.
 
 <TypeTable
   type={{
     patterns: {
-      type: 'DebugbarCallPattern[]',
+      type: 'UpspectorCallPattern[]',
       description: 'Data-call patterns scanned in each file.',
       default: 'fetch, axios-style clients, SWR / React Query hooks',
     },
@@ -47,7 +47,7 @@ applies to the MCP endpoints.
       default: '{ "@/": <app dir> }',
     },
     resolvers: {
-      type: 'DebugbarCallResolver[]',
+      type: 'UpspectorCallResolver[]',
       description:
         'Map a call with no path literal (a service layer, an endpoint registry) to its backend route. First defined answer wins.',
     },
@@ -65,7 +65,7 @@ A resolver receives the call it found and returns the backend route it hits,
 or `undefined`. `readModule` follows imports, honouring the aliases.
 
 ```ts
-export const { POST, GET, DELETE } = createDebugbarHandler({
+export const { POST, GET, DELETE } = createUpspectorHandler({
   resolvers: [
     async ({ call, file, readModule }) => {
       const match = /productsService\.(\w+)/.exec(call.expression);

@@ -1,4 +1,4 @@
-import { withDebugbar } from "@uplide/debugbar-next/config";
+import { withUpspector } from "@uplide/upspector-next/config";
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -17,4 +17,4 @@ const nextConfig: NextConfig = {
   turbopack: { rules: inspectorRules() },
 };
 
-export default withDebugbar(nextConfig);
+export default withUpspector(nextConfig);

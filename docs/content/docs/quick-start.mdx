@@ -45,7 +45,7 @@ APP_DEBUG=true pnpm example:api
 In a second terminal:
 
 ```bash
-NEXT_PUBLIC_DEBUGBAR=true pnpm example:web
+NEXT_PUBLIC_UPSPECTOR=true pnpm example:web
 ```
 
 </Step>
@@ -53,7 +53,7 @@ NEXT_PUBLIC_DEBUGBAR=true pnpm example:web
 
 ### Open the page
 
-Open [http://localhost:4200](http://localhost:4200) and click the debugbar
+Open [http://localhost:4200](http://localhost:4200) and click Upspector
 logo in the toolbar in the bottom-right corner. Drag the toolbar to move it to
 any corner, or click its arrow to tuck it into the screen edge.
 
@@ -68,6 +68,6 @@ attached or captured.
 - The product list is an SSR request with a deliberate **N+1** — the Database
   tab flags the repeated query.
 - The buttons issue browser requests through `fetch` and axios, a `400` error
-  envelope, and a `debugbar: false` opt-out that never shows up in the bar.
+  envelope, and an `upspector: false` opt-out that never shows up in the bar.
 - Press <kbd>Ctrl/Cmd</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> to pick an
   element with the inspector.

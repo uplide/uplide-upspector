@@ -1,21 +1,21 @@
 /**
- * Wire format for the `debugbar` response key. Other projects consume these
+ * Wire format for the `upspector` response key. Other projects consume these
  * literals, so treat every field name here as a public contract: additive
- * changes only, and bump `DEBUGBAR_PAYLOAD_VERSION` when the shape changes.
+ * changes only, and bump `UPSPECTOR_PAYLOAD_VERSION` when the shape changes.
  */
-export const DEBUGBAR_PAYLOAD_VERSION = 1;
+export const UPSPECTOR_PAYLOAD_VERSION = 1;
 
 /** Top-level response key the payload rides under unless a host renames it. */
-export const DEFAULT_RESPONSE_KEY = 'debugbar';
+export const DEFAULT_RESPONSE_KEY = 'upspector';
 
 /**
  * Response header set on every response that carries a payload; its value is
  * the payload version. Lets a `fetch` client decide from headers alone whether
  * a body is worth buffering, so every other response keeps streaming.
  */
-export const DEBUGBAR_HEADER = 'x-debugbar';
+export const UPSPECTOR_HEADER = 'x-upspector';
 
-export type DebugbarLogLevel =
+export type UpspectorLogLevel =
   | 'log'
   | 'error'
   | 'warn'
@@ -23,17 +23,17 @@ export type DebugbarLogLevel =
   | 'verbose'
   | 'fatal';
 
-export type DebugbarQueryKind = 'query' | 'execute' | 'begin' | 'script';
+export type UpspectorQueryKind = 'query' | 'execute' | 'begin' | 'script';
 
-export interface DebugbarSpan {
+export interface UpspectorSpan {
   name: string;
   startMs: number;
   durationMs: number;
 }
 
-export interface DebugbarQueryEntry {
+export interface UpspectorQueryEntry {
   index: number;
-  kind: DebugbarQueryKind;
+  kind: UpspectorQueryKind;
   sql: string;
   params?: unknown[];
   startMs: number;
@@ -43,7 +43,7 @@ export interface DebugbarQueryEntry {
   error?: string;
 }
 
-export interface DebugbarHttpEntry {
+export interface UpspectorHttpEntry {
   method: string;
   url: string;
   statusCode?: number;
@@ -52,7 +52,7 @@ export interface DebugbarHttpEntry {
   error?: string;
 }
 
-export interface DebugbarCacheEntry {
+export interface UpspectorCacheEntry {
   command: string;
   key?: string;
   argCount: number;
@@ -61,14 +61,14 @@ export interface DebugbarCacheEntry {
   error?: string;
 }
 
-export interface DebugbarLogEntry {
-  level: DebugbarLogLevel;
+export interface UpspectorLogEntry {
+  level: UpspectorLogLevel;
   message: string;
   context?: string;
   atMs: number;
 }
 
-export interface DebugbarPayload {
+export interface UpspectorPayload {
   version: number;
   requestId: string;
   /** ISO timestamp of the moment the collector was created. */
@@ -82,30 +82,30 @@ export interface DebugbarPayload {
     handler?: string;
     statusCode?: number;
   };
-  timers: DebugbarSpan[];
+  timers: UpspectorSpan[];
   database: {
     count: number;
     totalMs: number;
     truncated: boolean;
     duplicates: Array<{ sql: string; count: number }>;
-    queries: DebugbarQueryEntry[];
+    queries: UpspectorQueryEntry[];
   };
   http: {
     count: number;
     totalMs: number;
     truncated: boolean;
-    calls: DebugbarHttpEntry[];
+    calls: UpspectorHttpEntry[];
   };
   cache: {
     count: number;
     totalMs: number;
     truncated: boolean;
-    operations: DebugbarCacheEntry[];
+    operations: UpspectorCacheEntry[];
   };
   logs: {
     count: number;
     truncated: boolean;
-    entries: DebugbarLogEntry[];
+    entries: UpspectorLogEntry[];
   };
   memory: {
     rssBytes: number;
@@ -118,7 +118,7 @@ export interface DebugbarPayload {
  * Written in place of a payload when the backend's snapshot itself failed, so
  * the client can show why instead of silently showing nothing.
  */
-export interface DebugbarErrorPayload {
+export interface UpspectorErrorPayload {
   version: number;
   error: string;
 }

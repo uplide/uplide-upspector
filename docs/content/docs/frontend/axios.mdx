@@ -10,20 +10,20 @@ icon: ArrowLeftRight
 <Tab value="Server components">
 
 ```ts title="lib/api.server.ts"
-import { attachDebugbarServerAxios } from '@uplide/debugbar-next/server';
+import { attachUpspectorServerAxios } from '@uplide/upspector-next/server';
 
 export const serverApi = axios.create({ baseURL: process.env.API_URL });
-attachDebugbarServerAxios(serverApi);
+attachUpspectorServerAxios(serverApi);
 ```
 
 </Tab>
 <Tab value="Browser">
 
 ```ts title="lib/api.ts"
-import { attachDebugbar } from '@uplide/debugbar/axios';
+import { attachUpspector } from '@uplide/upspector/axios';
 
 export const browserApi = axios.create({ baseURL: process.env.NEXT_PUBLIC_API_URL });
-attachDebugbar(browserApi);
+attachUpspector(browserApi);
 ```
 
 </Tab>
@@ -41,13 +41,13 @@ overlay. Both functions return a detach function.
 
 ## Options
 
-`attachDebugbar(api, options)` accepts:
+`attachUpspector(api, options)` accepts:
 
 <TypeTable
   type={{
     source: { type: '"csr" | "ssr"', description: 'Where the request ran; shown in the bar.', default: '"csr"' },
     onEntry: {
-      type: '(entry: DebugbarEntry) => void',
+      type: '(entry: UpspectorEntry) => void',
       description: 'Where entries go.',
       default: 'the browser overlay store',
     },

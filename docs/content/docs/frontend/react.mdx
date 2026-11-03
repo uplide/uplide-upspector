@@ -5,28 +5,28 @@ icon: Atom
 ---
 
 ```bash
-pnpm add @uplide/debugbar
+pnpm add @uplide/upspector
 ```
 
 Register a config, install a capture adapter, and render the overlay once.
 
 ```tsx title="main.tsx"
-import { setDebugbarConfig } from '@uplide/debugbar';
-import { installFetchCapture } from '@uplide/debugbar/fetch';
-import { attachDebugbar } from '@uplide/debugbar/axios';
-import { DebugbarOverlay } from '@uplide/debugbar/react';
+import { setUpspectorConfig } from '@uplide/upspector';
+import { installFetchCapture } from '@uplide/upspector/fetch';
+import { attachUpspector } from '@uplide/upspector/axios';
+import { UpspectorOverlay } from '@uplide/upspector/react';
 
-setDebugbarConfig({
+setUpspectorConfig({
   enabled: import.meta.env.DEV,
   match: (url) => url.startsWith(API),
 });
 
-installFetchCapture(); // and/or attachDebugbar(axiosInstance)
+installFetchCapture(); // and/or attachUpspector(axiosInstance)
 
 root.render(
   <>
     <App />
-    <DebugbarOverlay />
+    <UpspectorOverlay />
   </>,
 );
 ```
@@ -49,12 +49,12 @@ The overlay styles itself. Override the accent color with a CSS variable:
 ```
 
 A developer can also pick their own accent from the gear menu in the panel
-header. That choice is stored per browser (`localStorage["debugbar.accent"]`)
+header. That choice is stored per browser (`localStorage["upspector.accent"]`)
 and wins over the host's value until they press **reset**.
 
 Under a strict Content Security Policy, pass the nonce for the overlay's
 `<style>` tag:
 
 ```tsx
-<DebugbarOverlay nonce={nonce} />
+<UpspectorOverlay nonce={nonce} />
 ```

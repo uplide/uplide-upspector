@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearAgentBuffer, getAgentBuffer } from "../src/mcp.js";
-import { createDebugbarHandler } from "../src/route.js";
+import { createUpspectorHandler } from "../src/route.js";
 
-const handler = createDebugbarHandler();
+const handler = createUpspectorHandler();
 
 function context(endpoint: string) {
   return { params: Promise.resolve({ endpoint }) };
@@ -10,7 +10,7 @@ function context(endpoint: string) {
 
 function post(endpoint: string, body: unknown) {
   return handler.POST(
-    new Request(`http://localhost:3000/api/debugbar/${endpoint}`, {
+    new Request(`http://localhost:3000/api/upspector/${endpoint}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
@@ -28,7 +28,7 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-describe("createDebugbarHandler", () => {
+describe("createUpspectorHandler", () => {
   it("routes mcp to the MCP server", async () => {
     const response = await post("mcp", { jsonrpc: "2.0", id: 1, method: "ping" });
 
@@ -60,7 +60,7 @@ describe("createDebugbarHandler", () => {
 
   it("answers 405 with the allowed methods for a method the endpoint lacks", async () => {
     const response = await handler.GET(
-      new Request("http://localhost:3000/api/debugbar/inspect"),
+      new Request("http://localhost:3000/api/upspector/inspect"),
       context("inspect"),
     );
 

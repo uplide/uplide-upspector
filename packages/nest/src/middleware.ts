@@ -1,16 +1,16 @@
 import { randomUUID } from 'node:crypto';
-import { DebugbarCollector } from './collector';
-import { runWithDebugbar } from './context';
+import { UpspectorCollector } from './collector';
+import { runWithUpspector } from './context';
 import type {
-  DebugbarRequestLike,
-  DebugbarResponseLike,
-  ResolvedDebugbarOptions,
+  UpspectorRequestLike,
+  UpspectorResponseLike,
+  ResolvedUpspectorOptions,
 } from './types';
-import { DEBUGBAR_HEADER, DEBUGBAR_PAYLOAD_VERSION } from './types';
+import { UPSPECTOR_HEADER, UPSPECTOR_PAYLOAD_VERSION } from './types';
 
-export type DebugbarMiddleware = (
-  req: DebugbarRequestLike,
-  res: DebugbarResponseLike,
+export type UpspectorMiddleware = (
+  req: UpspectorRequestLike,
+  res: UpspectorResponseLike,
   next: (err?: unknown) => void,
 ) => void;
 
@@ -42,9 +42,9 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * guard-issued queries (permission lookups) are captured; an interceptor-based
  * store would miss them, because Nest runs guards first.
  */
-export function createDebugbarMiddleware(
-  options: ResolvedDebugbarOptions,
-): DebugbarMiddleware {
+export function createUpspectorMiddleware(
+  options: ResolvedUpspectorOptions,
+): UpspectorMiddleware {
   return (req, res, next) => {
     if (!options.enabled || options.skip(req)) {
       return next();
@@ -57,13 +57,13 @@ export function createDebugbarMiddleware(
 
     if (!incoming) {
       // Write it back so the correlation-id interceptor downstream adopts the
-      // same id: `debugbar.requestId` then always equals the `x-request-id`
+      // same id: `upspector.requestId` then always equals the `x-request-id`
       // response header.
       headers['x-request-id'] = requestId;
       req.headers = headers;
     }
 
-    const collector = new DebugbarCollector(options, {
+    const collector = new UpspectorCollector(options, {
       requestId,
       method: req.method ?? 'UNKNOWN',
       url: req.originalUrl || req.url || '',
@@ -82,24 +82,24 @@ export function createDebugbarMiddleware(
           );
           collector.addSpan('total', collector.startHr);
           body[options.responseKey] = collector.snapshot();
-          res.setHeader(DEBUGBAR_HEADER, String(DEBUGBAR_PAYLOAD_VERSION));
+          res.setHeader(UPSPECTOR_HEADER, String(UPSPECTOR_PAYLOAD_VERSION));
         }
       } catch (error) {
         // A snapshot bug must never turn a 200 into a 500.
         if (isPlainObject(body)) {
           body[options.responseKey] = {
-            version: DEBUGBAR_PAYLOAD_VERSION,
-            error: `debugbar snapshot failed: ${
+            version: UPSPECTOR_PAYLOAD_VERSION,
+            error: `upspector snapshot failed: ${
               error instanceof Error ? error.message : String(error)
             }`,
           };
-          res.setHeader(DEBUGBAR_HEADER, String(DEBUGBAR_PAYLOAD_VERSION));
+          res.setHeader(UPSPECTOR_HEADER, String(UPSPECTOR_PAYLOAD_VERSION));
         }
       }
 
       return originalJson(body);
     };
 
-    return runWithDebugbar(collector, () => next());
+    return runWithUpspector(collector, () => next());
   };
 }

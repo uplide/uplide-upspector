@@ -4,9 +4,9 @@ import { parseArgs } from "node:util";
 import { SetupError } from "./context.js";
 import { init } from "./init.js";
 
-const USAGE = `Usage: debugbar init [options]
+const USAGE = `Usage: upspector init [options]
 
-Sets up @uplide/debugbar-next in the Next.js App Router project in the current
+Sets up @uplide/upspector-next in the Next.js App Router project in the current
 directory. Each step is skipped when it is already in place, so running it
 again is safe.
 
@@ -72,7 +72,7 @@ main().then(
   },
   (error: unknown) => {
     if (!(error instanceof SetupError)) throw error;
-    console.error(`debugbar: ${error.message}`);
+    console.error(`upspector: ${error.message}`);
     process.exitCode = 1;
   },
 );

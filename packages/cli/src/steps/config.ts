@@ -1,11 +1,11 @@
 import { applied, skipped, type Step } from "../step.js";
 
-// The files `withDebugbar` looks for, in its order.
+// The files `withUpspector` looks for, in its order.
 const CONFIG_FILES = [
-  "debugbar.config.ts",
-  "debugbar.config.mts",
-  "debugbar.config.js",
-  "debugbar.config.mjs",
+  "upspector.config.ts",
+  "upspector.config.mts",
+  "upspector.config.js",
+  "upspector.config.mjs",
 ];
 
 export const configStep: Step = {
@@ -14,13 +14,13 @@ export const configStep: Step = {
     const existing = files.find(CONFIG_FILES);
     if (existing) return skipped(`${existing} already exists`);
 
-    const path = `debugbar.config.${ext}`;
+    const path = `upspector.config.${ext}`;
     files.write(
       path,
-      `import { defineNextDebugbarConfig } from "@uplide/debugbar-next";
+      `import { defineNextUpspectorConfig } from "@uplide/upspector-next";
 
-export default defineNextDebugbarConfig({
-  enabled: process.env.NEXT_PUBLIC_DEBUGBAR === "true",
+export default defineNextUpspectorConfig({
+  enabled: process.env.NEXT_PUBLIC_UPSPECTOR === "true",
   backend: { origins: [process.env.${apiEnv}] },
 });
 `,

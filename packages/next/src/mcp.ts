@@ -1,11 +1,11 @@
 import {
-  type DebugbarEntry,
-  type DebugbarRenderPass,
+  type UpspectorEntry,
+  type UpspectorRenderPass,
   isRecord,
-} from "@uplide/debugbar";
+} from "@uplide/upspector";
 import {
   clearAgentBuffer,
-  type DebugbarBufferedEntry,
+  type UpspectorBufferedEntry,
   getAgentBuffer,
   pushAgentEntry,
   pushAgentRenderPass,
@@ -19,13 +19,13 @@ export {
   pushAgentRenderPass,
 } from "./agent-buffer.js";
 export type {
-  DebugbarAgentBuffer,
-  DebugbarBufferedEntry,
-  DebugbarBufferedRenderPass,
-  DebugbarPageContext,
+  UpspectorAgentBuffer,
+  UpspectorBufferedEntry,
+  UpspectorBufferedRenderPass,
+  UpspectorPageContext,
 } from "./agent-buffer.js";
 
-export interface DebugbarAgentHandlerOptions {
+export interface UpspectorAgentHandlerOptions {
   /**
    * Hostnames besides loopback the dev server may be reached by. Each one
    * widens who can read captured SQL and bodies, so keep it empty unless
@@ -37,11 +37,11 @@ export interface DebugbarAgentHandlerOptions {
 /** One tab can only have produced so much between two flushes. */
 const MAX_BATCH_ITEMS = 200;
 
-function isEntry(value: unknown): value is DebugbarEntry {
+function isEntry(value: unknown): value is UpspectorEntry {
   return isRecord(value) && typeof value.id === "string";
 }
 
-function isRenderPass(value: unknown): value is DebugbarRenderPass {
+function isRenderPass(value: unknown): value is UpspectorRenderPass {
   return isRecord(value) && typeof value.id === "string";
 }
 
@@ -52,7 +52,7 @@ function isRenderPass(value: unknown): value is DebugbarRenderPass {
  */
 export function createEventsHandler({
   allowedHosts = [],
-}: DebugbarAgentHandlerOptions = {}) {
+}: UpspectorAgentHandlerOptions = {}) {
   async function POST(request: Request): Promise<Response> {
     if (process.env.NODE_ENV !== "development") {
       return new Response(null, { status: 404 });
@@ -109,7 +109,7 @@ function numberArg(args: ToolArgs, name: string): number | undefined {
 }
 
 /** The filters every listing tool shares, applied in one place. */
-function selectEntries(args: ToolArgs): DebugbarBufferedEntry[] {
+function selectEntries(args: ToolArgs): UpspectorBufferedEntry[] {
   const pageUrl = stringArg(args, "pageUrl");
   const url = stringArg(args, "url");
   const tabId = stringArg(args, "tabId");
@@ -141,7 +141,7 @@ const FILTER_PROPERTIES = {
   tabId: { type: "string", description: "Only this browser tab." },
 } as const;
 
-function summarize(held: DebugbarBufferedEntry) {
+function summarize(held: UpspectorBufferedEntry) {
   const { entry } = held;
   const payload = entry.payload;
 
@@ -182,7 +182,7 @@ interface Issue {
 }
 
 function findIssues(
-  held: DebugbarBufferedEntry,
+  held: UpspectorBufferedEntry,
   slowQueryMs: number,
   slowRequestMs: number,
 ): Issue[] {
@@ -365,7 +365,7 @@ const TOOLS: Tool[] = [
 /** Newest first; a client asking for one of these gets it back. */
 const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
-const SERVER_INFO = { name: "uplide-debugbar", version: "0.1.0" };
+const SERVER_INFO = { name: "uplide-upspector", version: "0.1.0" };
 
 const INSTRUCTIONS =
   "Reads what the app's backend did while a browser used the app: every API request the pages made, with its SQL, outbound HTTP, logs and timings. Typical loop: `clear`, drive the browser through a scenario, then `find_issues` or `list_requests` and drill into one with `get_request`.";
@@ -441,12 +441,12 @@ function rpcError(id: JsonRpcId | null, code: number, message: string) {
 
 /**
  * MCP endpoint over the captured entries. Register it with an agent as an HTTP
- * server, e.g. `claude mcp add --transport http debugbar
- * http://localhost:3000/api/debugbar/mcp`. Development only.
+ * server, e.g. `claude mcp add --transport http upspector
+ * http://localhost:3000/api/upspector/mcp`. Development only.
  */
 export function createMcpHandler({
   allowedHosts = [],
-}: DebugbarAgentHandlerOptions = {}) {
+}: UpspectorAgentHandlerOptions = {}) {
   async function POST(request: Request): Promise<Response> {
     if (process.env.NODE_ENV !== "development") {
       return new Response(null, { status: 404 });

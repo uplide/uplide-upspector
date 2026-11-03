@@ -9,14 +9,14 @@ import { test } from 'vitest';
 import assert from 'node:assert/strict';
 
 import {
-  DebugbarCollector,
-  DebugbarConsoleLogger,
+  UpspectorCollector,
+  UpspectorConsoleLogger,
   installAxiosInstrumentation,
   installFetchInstrumentation,
   instrumentDrizzleDatabase,
   instrumentRedisClient,
-  resolveDebugbarOptions,
-  runWithDebugbar,
+  resolveUpspectorOptions,
+  runWithUpspector,
 } from '../src/index';
 
 interface RedisCommand {
@@ -34,9 +34,9 @@ type ResponseHandler = (response: unknown) => unknown;
 type ErrorHandler = (error: unknown) => Promise<unknown>;
 
 function makeCollector(overrides = {}) {
-  const options = resolveDebugbarOptions({ enabled: true, ...overrides });
+  const options = resolveUpspectorOptions({ enabled: true, ...overrides });
 
-  return new DebugbarCollector(options, {
+  return new UpspectorCollector(options, {
     requestId: 'test-request',
     method: 'GET',
     url: '/probe',
@@ -47,7 +47,7 @@ function makeCollector(overrides = {}) {
 
 test('logger mirrors printed lines into the collector', () => {
   const collector = makeCollector();
-  const logger = new DebugbarConsoleLogger('Probe');
+  const logger = new UpspectorConsoleLogger('Probe');
   const printed: string[] = [];
   const originalWrite = process.stdout.write.bind(process.stdout);
   process.stdout.write = (chunk: string | Uint8Array) => {
@@ -56,7 +56,7 @@ test('logger mirrors printed lines into the collector', () => {
   };
 
   try {
-    runWithDebugbar(collector, () => {
+    runWithUpspector(collector, () => {
       logger.log('inside request');
       logger.warn('careful');
     });
@@ -92,7 +92,7 @@ test('redis instrumentation times commands and preserves results', async () => {
   assert.equal(instrumentRedisClient(client), client);
 
   const collector = makeCollector();
-  const result = await runWithDebugbar(collector, () =>
+  const result = await runWithUpspector(collector, () =>
     client.sendCommand({ name: 'get', args: ['lot:1', 'ignored'] }),
   );
   await client.sendCommand({ name: 'set', args: ['lot:2'] });
@@ -122,7 +122,7 @@ test('redis instrumentation records rejections and rethrows', async () => {
   const collector = makeCollector();
 
   await assert.rejects(
-    runWithDebugbar(collector, () => client.sendCommand({ name: 'get' })),
+    runWithUpspector(collector, () => client.sendCommand({ name: 'get' })),
     /connection lost/,
   );
 
@@ -145,7 +145,7 @@ test('fetch instrumentation records method, path and status', async () => {
   installFetchInstrumentation(holder); // idempotent
 
   const collector = makeCollector();
-  const response = await runWithDebugbar(collector, () =>
+  const response = await runWithUpspector(collector, () =>
     holder.fetch('https://api.test/v1/items?token=secret', { method: 'post' }),
   );
   await holder.fetch('https://api.test/outside');
@@ -206,7 +206,7 @@ test('axios instrumentation covers instances created after install', async () =>
   const created = axiosModule.create();
 
   const collector = makeCollector();
-  await runWithDebugbar(collector, async () => {
+  await runWithUpspector(collector, async () => {
     await created.request({
       method: 'get',
       url: '/lots?page=2',
@@ -259,12 +259,12 @@ test('drizzle instrumentation times queries, transactions and errors', async () 
   }));
 
   assert.equal(
-    instrumentDrizzleDatabase(db, resolveDebugbarOptions({ enabled: true })),
+    instrumentDrizzleDatabase(db, resolveUpspectorOptions({ enabled: true })),
     db,
   );
 
   const collector = makeCollector();
-  const rows = await runWithDebugbar(collector, async () => {
+  const rows = await runWithUpspector(collector, async () => {
     const result = await db.session
       .prepareQuery({ sql: 'select * from lots where id = $1', params: [1] })
       .execute();
@@ -312,10 +312,10 @@ test('drizzle instrumentation records sqlite delegation once and leaves lazy the
       },
     }),
   }));
-  instrumentDrizzleDatabase(db, resolveDebugbarOptions({ enabled: true }));
+  instrumentDrizzleDatabase(db, resolveUpspectorOptions({ enabled: true }));
 
   const collector = makeCollector();
-  runWithDebugbar(collector, () => {
+  runWithUpspector(collector, () => {
     const prepared = db.session.prepareQuery({ sql: 'select * from lots' });
     assert.deepEqual(prepared.get(), { id: 1 });
     prepared.execute();
@@ -331,7 +331,7 @@ test('drizzle instrumentation is a no-op when disabled', () => {
   const original = proto.prepareQuery;
 
   assert.equal(
-    instrumentDrizzleDatabase(db, resolveDebugbarOptions({ enabled: false })),
+    instrumentDrizzleDatabase(db, resolveUpspectorOptions({ enabled: false })),
     db,
   );
   assert.equal(proto.prepareQuery, original);

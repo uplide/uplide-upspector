@@ -1,6 +1,6 @@
-# debugbar
+# Upspector
 
-A per-request debug bar for a NestJS backend and a React / Next.js frontend. The
+A per-request debug overlay for a NestJS backend and a React / Next.js frontend. The
 backend measures every request (SQL, outbound HTTP, cache, logs, timers) and
 appends the result to the JSON response; the frontend lifts it off again —
 from axios or `fetch`, in the browser or during SSR — and shows it in an
@@ -8,17 +8,17 @@ overlay.
 
 | Package | What it is |
 | --- | --- |
-| `@uplide/debugbar-protocol` | The wire contract: payload types, `DEBUGBAR_PAYLOAD_VERSION`, the `x-debugbar` header, guards. |
-| `@uplide/debugbar-nest` | NestJS collector and integrations (Prisma driver adapter, Drizzle, ioredis, axios, fetch, logger). |
-| `@uplide/debugbar` | Framework-agnostic capture (`/axios`, `/fetch`) and the React overlay (`/react`). |
-| `@uplide/debugbar-next` | Next.js App Router glue: SSR capture, render profiling, inspector route. |
-| `@uplide/debugbar-cli` | `debugbar init`: sets up `@uplide/debugbar-next` in a Next.js project. |
+| `@uplide/upspector-protocol` | The wire contract: payload types, `UPSPECTOR_PAYLOAD_VERSION`, the `x-upspector` header, guards. |
+| `@uplide/upspector-nest` | NestJS collector and integrations (Prisma driver adapter, Drizzle, ioredis, axios, fetch, logger). |
+| `@uplide/upspector` | Framework-agnostic capture (`/axios`, `/fetch`) and the React overlay (`/react`). |
+| `@uplide/upspector-next` | Next.js App Router glue: SSR capture, render profiling, inspector route. |
+| `@uplide/upspector-cli` | `upspector init`: sets up `@uplide/upspector-next` in a Next.js project. |
 
 ## Wire contract
 
 - The payload rides under a top-level key of every plain-object JSON response
-  (default `debugbar`, configurable on both sides — keep them equal).
-- Every response that carries it also has `x-debugbar: <version>`. The `fetch`
+  (default `upspector`, configurable on both sides — keep them equal).
+- Every response that carries it also has `x-upspector: <version>`. The `fetch`
   adapter reads a body only when that header is present, so any other response
   — streams, files, an API proxy passing bytes through — is never buffered.
 - When the backend's snapshot itself fails, the key holds
@@ -28,16 +28,16 @@ overlay.
 
 ```ts
 // main.module.ts
-NestDebugbarModule.forRoot({
+NestUpspectorModule.forRoot({
   enabled: process.env.APP_DEBUG === "true",
   skip: (req) => (req.originalUrl ?? "").startsWith("/metrics"),
 });
 
 // main.ts — before guards and pipes, so guard queries are captured too
-const options = app.get<ResolvedDebugbarOptions>(DEBUGBAR_OPTIONS);
+const options = app.get<ResolvedUpspectorOptions>(UPSPECTOR_OPTIONS);
 if (options.enabled) {
-  app.use(createDebugbarMiddleware(options));
-  app.useLogger(new DebugbarConsoleLogger());
+  app.use(createUpspectorMiddleware(options));
+  app.useLogger(new UpspectorConsoleLogger());
   installAxiosInstrumentation(axios);
   installFetchInstrumentation();
 }
@@ -54,23 +54,23 @@ const db = instrumentDrizzleDatabase(drizzle(pool), options);
 instrumentRedisClient(redis);
 ```
 
-Browsers only see `x-debugbar` cross-origin when CORS exposes it:
-`exposedHeaders: ["x-debugbar"]`. The payload contains SQL text and bound
+Browsers only see `x-upspector` cross-origin when CORS exposes it:
+`exposedHeaders: ["x-upspector"]`. The payload contains SQL text and bound
 parameters — never enable it on a production deployment that real users hit.
 
 ## Frontend (Next.js App Router)
 
-`pnpm dlx @uplide/debugbar-cli init` makes the changes below (`--dry-run` to
+`pnpm dlx @uplide/upspector-cli init` makes the changes below (`--dry-run` to
 preview them). By hand:
 
 One config, shared by server and browser:
 
 ```ts
-// debugbar.config.ts
-import { defineNextDebugbarConfig } from "@uplide/debugbar-next";
+// upspector.config.ts
+import { defineNextUpspectorConfig } from "@uplide/upspector-next";
 
-export default defineNextDebugbarConfig({
-  enabled: process.env.NEXT_PUBLIC_DEBUGBAR === "true",
+export default defineNextUpspectorConfig({
+  enabled: process.env.NEXT_PUBLIC_UPSPECTOR === "true",
   backend: {
     origins: [process.env.NEXT_PUBLIC_API_BASE_URL],
     proxyPath: "/api/proxy", // optional same-origin proxy the browser uses
@@ -80,43 +80,43 @@ export default defineNextDebugbarConfig({
 
 ```ts
 // next.config.ts — dev HMR otherwise serves fetches from cache and the bar stays empty.
-// Reads debugbar.config.{ts,mts,js,mjs} from the project root.
+// Reads upspector.config.{ts,mts,js,mjs} from the project root.
 // { configFile: "path/to/file.ts" } to use another path.
-import { withDebugbar } from "@uplide/debugbar-next/config";
+import { withUpspector } from "@uplide/upspector-next/config";
 
-export default withDebugbar(nextConfig);
+export default withUpspector(nextConfig);
 ```
 
 ```ts
 // instrumentation.ts — wraps fetch before Next patches it
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { registerDebugbar } = await import("@uplide/debugbar-next/server");
-    registerDebugbar((await import("./debugbar.config")).default);
+    const { registerUpspector } = await import("@uplide/upspector-next/server");
+    registerUpspector((await import("./upspector.config")).default);
   }
 }
 ```
 
 ```ts
 // instrumentation-client.ts — synchronous, runs before hydration
-import { installDebugbarClient } from "@uplide/debugbar-next/client";
-import debugbar from "./debugbar.config";
+import { installUpspectorClient } from "@uplide/upspector-next/client";
+import upspector from "./upspector.config";
 
-installDebugbarClient(debugbar);
+installUpspectorClient(upspector);
 ```
 
 ```tsx
 // app/layout.tsx
-import { DebugbarRoot, openDebugbarScope } from "@uplide/debugbar-next/server";
+import { UpspectorRoot, openUpspectorScope } from "@uplide/upspector-next/server";
 
 export default async function RootLayout({ children }) {
-  openDebugbarScope({ profile: process.env.DEBUGBAR_RENDER_PROFILE === "true" }); // before the first await
+  openUpspectorScope({ profile: process.env.UPSPECTOR_RENDER_PROFILE === "true" }); // before the first await
   return (
     <html>
       <body>
         {children}
         <Suspense>
-          <DebugbarRoot />
+          <UpspectorRoot />
         </Suspense>
       </body>
     </html>
@@ -125,23 +125,23 @@ export default async function RootLayout({ children }) {
 ```
 
 ```ts
-// app/api/debugbar/[endpoint]/route.ts
-import { createDebugbarHandler } from "@uplide/debugbar-next/route";
+// app/api/upspector/[endpoint]/route.ts
+import { createUpspectorHandler } from "@uplide/upspector-next/route";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const { POST, GET, DELETE } = createDebugbarHandler();
+export const { POST, GET, DELETE } = createUpspectorHandler();
 ```
 
 Nothing else changes in the app: every server and browser `fetch` to the
 backend is captured. Requests outside a render (route handlers, middleware)
-are left alone, and `fetch(url, { debugbar: false })` opts a single call out.
+are left alone, and `fetch(url, { upspector: false })` opts a single call out.
 
 ### axios instances
 
 ```ts
-attachDebugbarServerAxios(serverApi);   // SSR, from @uplide/debugbar-next/server
-attachDebugbar(browserApi);             // browser, from @uplide/debugbar/axios
+attachUpspectorServerAxios(serverApi);   // SSR, from @uplide/upspector-next/server
+attachUpspector(browserApi);             // browser, from @uplide/upspector/axios
 ```
 
 Attach before any interceptor that snapshots response bodies.
@@ -174,7 +174,7 @@ page's RSC payload:
   browser never sent, so they are not trusted to a name pattern.
 
 ```ts
-defineNextDebugbarConfig({
+defineNextUpspectorConfig({
   // …
   redactKeys: ["x-tenant", /ssn$/i],   // always mask: headers, query, bodies
   revealKeys: ["sortKey"],             // never mask by name (credential-shaped values still are)
@@ -191,7 +191,7 @@ generated and is shown in CSR captures; list such names in `redactKeys`.
 
 The picker reads `data-insp-path` attributes from
 [`code-inspector-plugin`](https://github.com/zh-lx/code-inspector) in development builds.
-`createDebugbarHandler` (and `createInspectHandler`) accepts:
+`createUpspectorHandler` (and `createInspectHandler`) accepts:
 
 - `patterns` — extra data-call patterns (defaults: `fetch`, axios-style clients, SWR/React Query hooks);
 - `aliases` — import aliases (default `{ "@/": <app dir> }`);
@@ -206,11 +206,11 @@ pages are refused.
 ## Other React apps
 
 ```ts
-setDebugbarConfig({ enabled: true, match: (url) => url.startsWith(API) });
-installFetchCapture();          // or attachDebugbar(axiosInstance)
+setUpspectorConfig({ enabled: true, match: (url) => url.startsWith(API) });
+installFetchCapture();          // or attachUpspector(axiosInstance)
 ```
 
-and render `<DebugbarOverlay />` from `@uplide/debugbar/react` once.
+and render `<UpspectorOverlay />` from `@uplide/upspector/react` once.
 
 The overlay styles itself; override the accent with `:root { --udbg-accent: … }`
 and pass `nonce` under a strict CSP.
@@ -233,7 +233,7 @@ pnpm test
 pnpm install && pnpm build
 pnpm --filter example-nest-api db:push
 APP_DEBUG=true pnpm example:api              # terminal 1
-NEXT_PUBLIC_DEBUGBAR=true pnpm example:web   # terminal 2
+NEXT_PUBLIC_UPSPECTOR=true pnpm example:web   # terminal 2
 ```
 
 Both flags default to off: without them the apps run but no payload is
@@ -241,7 +241,7 @@ attached or captured.
 
 Open http://localhost:4200: the product list is an SSR request with a
 deliberate N+1; the buttons issue browser requests through `fetch` and axios,
-a 400 error envelope, and a `debugbar: false` opt-out.
+a 400 error envelope, and an `upspector: false` opt-out.
 
 ## License
 

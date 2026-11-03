@@ -1,9 +1,9 @@
 import {
-  DEBUGBAR_HEADER,
-  DEBUGBAR_PAYLOAD_VERSION,
+  UPSPECTOR_HEADER,
+  UPSPECTOR_PAYLOAD_VERSION,
   setCaptureTracker,
-} from "@uplide/debugbar";
-import { wrapFetch } from "@uplide/debugbar/fetch";
+} from "@uplide/upspector";
+import { wrapFetch } from "@uplide/upspector/fetch";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -20,17 +20,17 @@ vi.mock("react", async (importOriginal) => ({
   },
 }));
 
-const { registerDebugbar, openDebugbarScope, waitForDebugbarSsrEntries } =
+const { registerUpspector, openUpspectorScope, waitForUpspectorSsrEntries } =
   await import("../src/server.js");
 const { isSsrCaptureActive, pushSsrEntry } = await import("../src/ssr-store.js");
-const { withDebugbar } = await import("../src/with-debugbar.js");
-const { defineNextDebugbarConfig } = await import("../src/index.js");
+const { withUpspector } = await import("../src/with-upspector.js");
+const { defineNextUpspectorConfig } = await import("../src/index.js");
 const { createInspectHandler } = await import("../src/inspect.js");
 
 const API = "https://api.example.test";
 
 const payload = {
-  version: DEBUGBAR_PAYLOAD_VERSION,
+  version: UPSPECTOR_PAYLOAD_VERSION,
   requestId: "req-1",
   startedAt: "2026-11-02T00:00:00.000Z",
   durationMs: 1,
@@ -44,22 +44,22 @@ const payload = {
 };
 
 function flagged(): Response {
-  return new Response(JSON.stringify({ data: 1, debugbar: payload }), {
+  return new Response(JSON.stringify({ data: 1, upspector: payload }), {
     headers: {
       "content-type": "application/json",
-      [DEBUGBAR_HEADER]: String(DEBUGBAR_PAYLOAD_VERSION),
+      [UPSPECTOR_HEADER]: String(UPSPECTOR_PAYLOAD_VERSION),
     },
   });
 }
 
-const config = defineNextDebugbarConfig({
+const config = defineNextUpspectorConfig({
   enabled: true,
   backend: { origins: [API] },
 });
 
 beforeEach(() => {
   renderPass = undefined;
-  registerDebugbar(config);
+  registerUpspector(config);
 });
 
 afterEach(() => setCaptureTracker(null));
@@ -68,13 +68,13 @@ describe("SSR scope", () => {
   it("is inactive until the root layout opens it", () => {
     expect(isSsrCaptureActive()).toBe(false);
 
-    openDebugbarScope();
+    openUpspectorScope();
 
     expect(isSsrCaptureActive()).toBe(true);
   });
 
   it("collects fetch captures and waits for the ones in flight", async () => {
-    openDebugbarScope();
+    openUpspectorScope();
     let release: (response: Response) => void = () => {};
     const inner = () =>
       new Promise<Response>((resolve) => {
@@ -87,7 +87,7 @@ describe("SSR scope", () => {
     });
 
     const request = fetched(`${API}/items`);
-    const waiting = waitForDebugbarSsrEntries();
+    const waiting = waitForUpspectorSsrEntries();
     let done = false;
     void waiting.then(() => {
       done = true;
@@ -116,18 +116,18 @@ describe("SSR scope", () => {
   });
 });
 
-describe("defineNextDebugbarConfig", () => {
+describe("defineNextUpspectorConfig", () => {
   it("matches backend origins only", () => {
     expect(config.match(`${API}/v1/items?x=1`)).toBe(true);
     expect(config.match("https://cdn.example.test/a.png")).toBe(false);
   });
 });
 
-describe("withDebugbar", () => {
+describe("withUpspector", () => {
   const base = { reactStrictMode: true, experimental: { ppr: true } };
 
   function projectWith(files: Record<string, string>): string {
-    const root = mkdtempSync(join(tmpdir(), "debugbar-next-"));
+    const root = mkdtempSync(join(tmpdir(), "upspector-next-"));
     for (const [name, source] of Object.entries(files)) {
       writeFileSync(join(root, name), source);
     }
@@ -139,28 +139,28 @@ describe("withDebugbar", () => {
 
   it("turns the HMR fetch cache off only when the config enables it", async () => {
     projectWith({
-      "debugbar.config.ts": "export default { enabled: true as boolean };",
+      "upspector.config.ts": "export default { enabled: true as boolean };",
     });
-    expect(await withDebugbar(base)()).toEqual({
+    expect(await withUpspector(base)()).toEqual({
       reactStrictMode: true,
       experimental: { ppr: true, serverComponentsHmrCache: false },
     });
 
-    projectWith({ "debugbar.config.ts": "export default { enabled: false };" });
-    expect(await withDebugbar(base)()).toBe(base);
+    projectWith({ "upspector.config.ts": "export default { enabled: false };" });
+    expect(await withUpspector(base)()).toBe(base);
   });
 
   it("reads a custom config path", async () => {
     projectWith({ "debug.mjs": "export default { enabled: true };" });
 
-    const config = await withDebugbar(base, { configFile: "debug.mjs" })();
+    const config = await withUpspector(base, { configFile: "debug.mjs" })();
     expect(config.experimental).toHaveProperty("serverComponentsHmrCache", false);
   });
 
   it("fails clearly when no config file exists", async () => {
     projectWith({});
 
-    await expect(withDebugbar(base)()).rejects.toThrow(/No config file found/);
+    await expect(withUpspector(base)()).rejects.toThrow(/No config file found/);
   });
 });
 
@@ -170,7 +170,7 @@ describe("createInspectHandler", () => {
     const { POST } = createInspectHandler();
 
     const response = await POST(
-      new Request("http://localhost/api/debugbar/inspect", {
+      new Request("http://localhost/api/upspector/inspect", {
         method: "POST",
         body: JSON.stringify({ paths: ["app/page.tsx:1:1:div"] }),
       }),
@@ -190,7 +190,7 @@ describe("createInspectHandler", () => {
       options: Parameters<typeof createInspectHandler>[0] = {},
     ) {
       return createInspectHandler(options).POST(
-        new Request("http://localhost:4200/api/debugbar/inspect", {
+        new Request("http://localhost:4200/api/upspector/inspect", {
           method: "POST",
           headers: {
             host: "localhost:4200",

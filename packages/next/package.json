@@ -1,7 +1,7 @@
 {
-  "name": "@uplide/debugbar-next",
+  "name": "@uplide/upspector-next",
   "version": "0.1.0",
-  "description": "Next.js App Router glue for @uplide/debugbar: SSR capture, render profiling and the element inspector route.",
+  "description": "Next.js App Router glue for @uplide/upspector: SSR capture, render profiling and the element inspector route.",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -10,8 +10,8 @@
       "default": "./dist/index.js"
     },
     "./config": {
-      "types": "./dist/with-debugbar.d.ts",
-      "default": "./dist/with-debugbar.js"
+      "types": "./dist/with-upspector.d.ts",
+      "default": "./dist/with-upspector.js"
     },
     "./server": {
       "types": "./dist/server.d.ts",
@@ -44,7 +44,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@uplide/debugbar": "workspace:*",
+    "@uplide/upspector": "workspace:*",
     "jiti": "^2.7.0"
   },
   "peerDependencies": {

@@ -1,4 +1,4 @@
-import { installDebugbarClient } from "@uplide/debugbar-next/client";
-import debugbar from "./debugbar.config";
+import { installUpspectorClient } from "@uplide/upspector-next/client";
+import upspector from "./upspector.config";
 
-installDebugbarClient(debugbar);
+installUpspectorClient(upspector);

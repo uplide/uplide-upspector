@@ -1,10 +1,10 @@
 ---
 title: Introduction
-description: A per-request debug bar for a NestJS backend and a React / Next.js frontend.
+description: A per-request debug overlay for a NestJS backend and a React / Next.js frontend.
 icon: Bug
 ---
 
-debugbar measures every backend request — SQL, outbound HTTP, cache, logs,
+Upspector measures every backend request — SQL, outbound HTTP, cache, logs,
 timers and memory — and appends the result to the JSON response. The frontend
 lifts it off again, from axios or `fetch`, in the browser or during SSR, and
 shows it in an overlay docked to the bottom of the page.
@@ -18,11 +18,11 @@ shows it in an overlay docked to the bottom of the page.
 
 | Package | What it is |
 | --- | --- |
-| `@uplide/debugbar-protocol` | The wire contract: payload types, `DEBUGBAR_PAYLOAD_VERSION`, the `x-debugbar` header, guards. |
-| `@uplide/debugbar-nest` | NestJS collector and integrations (Prisma driver adapter, Drizzle, ioredis, axios, fetch, logger). |
-| `@uplide/debugbar` | Framework-agnostic capture (`/axios`, `/fetch`) and the React overlay (`/react`). |
-| `@uplide/debugbar-next` | Next.js App Router glue: SSR capture, render profiling, element inspector route. |
-| `@uplide/debugbar-cli` | `debugbar init`: sets up `@uplide/debugbar-next` in a Next.js project. |
+| `@uplide/upspector-protocol` | The wire contract: payload types, `UPSPECTOR_PAYLOAD_VERSION`, the `x-upspector` header, guards. |
+| `@uplide/upspector-nest` | NestJS collector and integrations (Prisma driver adapter, Drizzle, ioredis, axios, fetch, logger). |
+| `@uplide/upspector` | Framework-agnostic capture (`/axios`, `/fetch`) and the React overlay (`/react`). |
+| `@uplide/upspector-next` | Next.js App Router glue: SSR capture, render profiling, element inspector route. |
+| `@uplide/upspector-cli` | `upspector init`: sets up `@uplide/upspector-next` in a Next.js project. |
 
 ## What the overlay shows
 
