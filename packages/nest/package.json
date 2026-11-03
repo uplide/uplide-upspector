@@ -2,7 +2,7 @@
   "name": "@uplide/debugbar-nest",
   "version": "0.1.0",
   "description": "Per-request debugbar for NestJS: SQL, HTTP, cache, logs and timers in a `debugbar` response key.",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

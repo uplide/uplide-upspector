@@ -242,3 +242,7 @@ attached or captured.
 Open http://localhost:4200: the product list is an SSR request with a
 deliberate N+1; the buttons issue browser requests through `fetch` and axios,
 a 400 error envelope, and a `debugbar: false` opt-out.
+
+## License
+
+[Apache License 2.0](LICENSE)

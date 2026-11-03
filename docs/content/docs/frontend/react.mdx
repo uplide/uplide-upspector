@@ -48,6 +48,10 @@ The overlay styles itself. Override the accent color with a CSS variable:
 }
 ```
 
+A developer can also pick their own accent from the gear menu in the panel
+header. That choice is stored per browser (`localStorage["debugbar.accent"]`)
+and wins over the host's value until they press **reset**.
+
 Under a strict Content Security Policy, pass the nonce for the overlay's
 `<style>` tag:
 
