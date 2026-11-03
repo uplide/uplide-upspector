@@ -1,6 +1,6 @@
 ---
 title: Integrations
-description: Prisma, ioredis, outbound HTTP, logs and custom spans.
+description: Prisma, Drizzle, ioredis, outbound HTTP, logs and custom spans.
 icon: Plug
 ---
 
@@ -26,6 +26,36 @@ Each query records its SQL, parameters, duration, kind (`query`, `execute`,
 `begin`, `script`), whether it ran inside a transaction and the application
 call site. Identical SQL issued more than once in a request is listed under
 `duplicates` (top 10, most repeated first), which is how the bar flags N+1 patterns.
+
+## Drizzle
+
+Wrap the database returned by `drizzle(...)`. It works with every driver
+(`node-postgres`, `postgres-js`, `mysql2`, `better-sqlite3`, `libsql`, ...):
+
+```ts title="src/db.ts"
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { instrumentDrizzleDatabase } from '@uplide/debugbar-nest';
+import { debugbarOptions } from './debugbar';
+
+export const db = instrumentDrizzleDatabase(
+  drizzle(pool, { schema }),
+  debugbarOptions,
+);
+```
+
+Query builders, relational queries (`db.query.*`), `db.execute(sql)` and
+prepared statements are recorded with the same fields as Prisma queries. The
+kind is derived from the SQL: `query` for reads, `execute` for writes and
+`begin` for transaction starts. `BEGIN`/`COMMIT` rows appear only for drivers
+that issue them as SQL (`node-postgres`, `mysql2`); drivers with a native
+transaction API (`pglite`, `better-sqlite3`) show just the statements inside.
+
+<Callout>
+  The call site is resolved from the stack when the query runs. A plain
+  `await db.select()...` starts the query from a microtask, so no application
+  frame is left on the stack and the call site stays empty; `.execute()`,
+  `.all()` or `.then()` called directly keep it.
+</Callout>
 
 ## Redis (ioredis)
 

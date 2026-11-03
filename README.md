@@ -9,7 +9,7 @@ overlay.
 | Package | What it is |
 | --- | --- |
 | `@uplide/debugbar-protocol` | The wire contract: payload types, `DEBUGBAR_PAYLOAD_VERSION`, the `x-debugbar` header, guards. |
-| `@uplide/debugbar-nest` | NestJS collector and integrations (Prisma driver adapter, ioredis, axios, fetch, logger). |
+| `@uplide/debugbar-nest` | NestJS collector and integrations (Prisma driver adapter, Drizzle, ioredis, axios, fetch, logger). |
 | `@uplide/debugbar` | Framework-agnostic capture (`/axios`, `/fetch`) and the React overlay (`/react`). |
 | `@uplide/debugbar-next` | Next.js App Router glue: SSR capture, render profiling, inspector route. |
 
@@ -45,6 +45,9 @@ if (options.enabled) {
 new PrismaClient({
   adapter: instrumentPrismaDriverAdapter(new PrismaPg(pool), options),
 });
+
+// Drizzle: wrap the database, any driver
+const db = instrumentDrizzleDatabase(drizzle(pool), options);
 
 // ioredis
 instrumentRedisClient(redis);

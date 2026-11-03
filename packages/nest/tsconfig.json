@@ -18,5 +18,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["src", "test/middleware.test.ts"]
+  "include": ["src", "test/middleware.test.ts", "test/integrations.test.ts"]
 }

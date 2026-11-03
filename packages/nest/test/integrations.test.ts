@@ -1,7 +1,7 @@
 // Behavioural contract of the integrations that hook third-party objects:
-// the Nest logger, ioredis' `sendCommand` funnel, `fetch` and axios-shaped
-// clients. Each must be a no-op outside a request scope and must not change
-// the wrapped object's observable behaviour.
+// the Nest logger, ioredis' `sendCommand` funnel, Drizzle sessions, `fetch`
+// and axios-shaped clients. Each must be a no-op outside a request scope and
+// must not change the wrapped object's observable behaviour.
 //
 // Run with: `pnpm test`.
 
@@ -13,10 +13,25 @@ import {
   DebugbarConsoleLogger,
   installAxiosInstrumentation,
   installFetchInstrumentation,
+  instrumentDrizzleDatabase,
   instrumentRedisClient,
   resolveDebugbarOptions,
   runWithDebugbar,
 } from '../src/index';
+
+interface RedisCommand {
+  name?: string;
+  args?: unknown[];
+}
+
+interface AxiosConfig {
+  method?: string;
+  url?: string;
+  baseURL?: string;
+}
+type RequestHandler = (config: AxiosConfig) => AxiosConfig;
+type ResponseHandler = (response: unknown) => unknown;
+type ErrorHandler = (error: unknown) => Promise<unknown>;
 
 function makeCollector(overrides = {}) {
   const options = resolveDebugbarOptions({ enabled: true, ...overrides });
@@ -33,9 +48,9 @@ function makeCollector(overrides = {}) {
 test('logger mirrors printed lines into the collector', () => {
   const collector = makeCollector();
   const logger = new DebugbarConsoleLogger('Probe');
-  const printed = [];
+  const printed: string[] = [];
   const originalWrite = process.stdout.write.bind(process.stdout);
-  process.stdout.write = (chunk) => {
+  process.stdout.write = (chunk: string | Uint8Array) => {
     printed.push(String(chunk));
     return true;
   };
@@ -66,9 +81,9 @@ test('logger mirrors printed lines into the collector', () => {
 });
 
 test('redis instrumentation times commands and preserves results', async () => {
-  const calls = [];
+  const calls: Array<string | undefined> = [];
   const client = {
-    sendCommand(command) {
+    sendCommand(command: RedisCommand) {
       calls.push(command.name);
       return Promise.resolve('OK');
     },
@@ -99,7 +114,8 @@ test('redis instrumentation times commands and preserves results', async () => {
 
 test('redis instrumentation records rejections and rethrows', async () => {
   const client = {
-    sendCommand: () => Promise.reject(new Error('connection lost')),
+    sendCommand: (_command: RedisCommand) =>
+      Promise.reject(new Error('connection lost')),
   };
   instrumentRedisClient(client);
 
@@ -117,11 +133,11 @@ test('redis instrumentation records rejections and rethrows', async () => {
 });
 
 test('fetch instrumentation records method, path and status', async () => {
-  const seen = [];
-  const holder = {
+  const seen: string[] = [];
+  const holder: { fetch: typeof fetch } = {
     fetch: async (input) => {
       seen.push(String(input));
-      return { status: 204 };
+      return new Response(null, { status: 204 });
     },
   };
 
@@ -148,15 +164,18 @@ test('fetch instrumentation records method, path and status', async () => {
 
 test('axios instrumentation covers instances created after install', async () => {
   const makeInstance = () => {
-    const requestHandlers = [];
-    const responseHandlers = [];
+    const requestHandlers: RequestHandler[] = [];
+    const responseHandlers: Array<[ResponseHandler, ErrorHandler]> = [];
 
     return {
       interceptors: {
-        request: { use: (fn) => requestHandlers.push(fn) },
-        response: { use: (ok, err) => responseHandlers.push([ok, err]) },
+        request: { use: (fn: RequestHandler) => requestHandlers.push(fn) },
+        response: {
+          use: (ok: ResponseHandler, err: ErrorHandler) =>
+            responseHandlers.push([ok, err]),
+        },
       },
-      async request(config) {
+      async request(config: AxiosConfig) {
         let current = config;
         for (const handler of requestHandlers) {
           current = handler(current);
@@ -167,7 +186,7 @@ test('axios instrumentation covers instances created after install', async () =>
         }
         return response;
       },
-      async fail(config) {
+      async fail(config: AxiosConfig) {
         let current = config;
         for (const handler of requestHandlers) {
           current = handler(current);
@@ -207,4 +226,113 @@ test('axios instrumentation covers instances created after install', async () =>
     ],
   );
   assert.equal(http.calls[1].error, 'boom');
+});
+
+interface DrizzleQuery {
+  sql: string;
+  params?: unknown[];
+}
+
+// Drizzle patches the session *class*, so every test declares its own.
+function makeDrizzleDatabase<P>(prepared: (query: DrizzleQuery) => P) {
+  class FakeSession {
+    prepareQuery(query: DrizzleQuery) {
+      return prepared(query);
+    }
+    async transaction<T>(fn: (tx: { session: FakeSession }) => Promise<T>) {
+      // Drizzle runs the callback on a fresh session of the same class.
+      return fn({ session: new FakeSession() });
+    }
+  }
+
+  return { session: new FakeSession() };
+}
+
+test('drizzle instrumentation times queries, transactions and errors', async () => {
+  const db = makeDrizzleDatabase((query) => ({
+    async execute() {
+      if (query.sql.includes('nope')) {
+        throw new Error('column "nope" does not exist');
+      }
+      return [{ id: 1 }];
+    },
+  }));
+
+  assert.equal(
+    instrumentDrizzleDatabase(db, resolveDebugbarOptions({ enabled: true })),
+    db,
+  );
+
+  const collector = makeCollector();
+  const rows = await runWithDebugbar(collector, async () => {
+    const result = await db.session
+      .prepareQuery({ sql: 'select * from lots where id = $1', params: [1] })
+      .execute();
+    await db.session.transaction((tx) =>
+      tx.session
+        .prepareQuery({ sql: 'update lots set name = $1', params: ['a'] })
+        .execute(),
+    );
+    await assert.rejects(
+      db.session.prepareQuery({ sql: 'select nope from lots' }).execute(),
+      /nope/,
+    );
+    return result;
+  });
+  await db.session.prepareQuery({ sql: 'select 1' }).execute();
+
+  const { database } = collector.snapshot();
+
+  assert.deepEqual(rows, [{ id: 1 }]);
+  assert.equal(database.count, 3);
+  assert.deepEqual(
+    database.queries.map((query) => [query.kind, query.inTransaction]),
+    [
+      ['query', false],
+      ['execute', true],
+      ['query', false],
+    ],
+  );
+  assert.deepEqual(database.queries[0].params, [1]);
+  assert.equal(database.queries[2].error, 'column "nope" does not exist');
+});
+
+test('drizzle instrumentation records sqlite delegation once and leaves lazy thenables alone', async () => {
+  let thenCalls = 0;
+  const db = makeDrizzleDatabase(() => ({
+    all: () => [{ id: 1 }],
+    get() {
+      return this.all()[0];
+    },
+    run: () => ({ changes: 1 }),
+    execute: () => ({
+      then(resolve: (value: unknown[]) => void) {
+        thenCalls += 1;
+        resolve([]);
+      },
+    }),
+  }));
+  instrumentDrizzleDatabase(db, resolveDebugbarOptions({ enabled: true }));
+
+  const collector = makeCollector();
+  runWithDebugbar(collector, () => {
+    const prepared = db.session.prepareQuery({ sql: 'select * from lots' });
+    assert.deepEqual(prepared.get(), { id: 1 });
+    prepared.execute();
+  });
+
+  assert.equal(collector.snapshot().database.count, 1);
+  assert.equal(thenCalls, 0, 'a lazy QueryPromise must not be executed');
+});
+
+test('drizzle instrumentation is a no-op when disabled', () => {
+  const db = makeDrizzleDatabase(() => ({ execute: async () => [] }));
+  const proto = Object.getPrototypeOf(db.session);
+  const original = proto.prepareQuery;
+
+  assert.equal(
+    instrumentDrizzleDatabase(db, resolveDebugbarOptions({ enabled: false })),
+    db,
+  );
+  assert.equal(proto.prepareQuery, original);
 });

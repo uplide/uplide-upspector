@@ -13,7 +13,7 @@ on the responses the app already makes, under a contract defined in
 1. The NestJS **middleware** opens a collector for the request and stores it in
    `AsyncLocalStorage`. It runs before guards and pipes, so their queries are
    captured too.
-2. **Integrations** (Prisma, ioredis, axios, `fetch`, the logger) look up the
+2. **Integrations** (Prisma, Drizzle, ioredis, axios, `fetch`, the logger) look up the
    current collector and record what they do.
 3. The **interceptor** adds route identity (`controller`, `handler`, `route`)
    and the handler span.
