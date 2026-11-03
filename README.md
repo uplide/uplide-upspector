@@ -4,34 +4,38 @@
 
 # Upspector
 
-**See what your backend did — right next to the page that asked for it.**
+**A debug overlay that shows backend data for each request.**
 
-A per-request debug overlay for NestJS backends and React / Next.js frontends.<br />
-SQL, outbound HTTP, cache, logs and timings for every request, in the browser and during SSR.
+Upspector works with NestJS backends and React or Next.js frontends.<br />
+It shows SQL, outbound HTTP, cache calls, logs and timings for each request.<br />
+It works in the browser and during server-side rendering (SSR).
 
 [Quick start](#quick-start) · [Documentation](docs/content/docs/index.mdx) · [Example apps](examples) · [License](#license)
 
 <br />
 
+<img src=".github/assets/example.gif" alt="The Upspector example app with the collapsed toolbar in the bottom-right corner: 1 request, 6 SQL queries" width="100%" />
+
 </div>
 
-## Why Upspector?
+## Overview
 
-Your frontend shows a slow page. Which request was it? Which queries did it run?
-Was that an N+1? Upspector answers that without leaving the browser: the backend
-attaches what it measured to each response, and a small toolbar in the corner of
-your app shows it.
+The backend records data for each request and sends it with the response.
+A toolbar in your app shows this data.
+Use it to find slow requests, see their queries and find N+1 problems.
 
 ## Features
 
-- 🗄️ **Database** — every SQL statement with parameters, timing and the line that ran it. Repeated queries are flagged as a possible N+1. Works with Prisma and Drizzle.
-- 🌐 **Requests** — SSR and browser requests side by side, from `fetch` or axios, with headers and bodies.
-- ⏱️ **Timers** — where the time went inside the handler, on a timeline.
-- 🧩 **Render profiling** — how long a Next.js server render took and what it cost in memory.
-- 📦 **Cache, HTTP & logs** — ioredis calls, outbound HTTP from the backend, and the logs written during the request.
-- 🎯 **Element inspector** — pick something on the page and see its source and the backend requests behind it.
-- 🤖 **MCP for agents** — coding agents can read the same data while they drive the browser.
-- 🔒 **Secrets masked** — tokens, passwords and cookies are redacted before they reach the overlay.
+| Feature | Description |
+| --- | --- |
+| Database | Shows each SQL statement with its parameters, duration and source line. Marks repeated queries as a possible N+1. Supports Prisma and Drizzle. |
+| Requests | Shows SSR and browser requests from `fetch` or axios, with headers and bodies. |
+| Timers | Shows the duration of each step in the handler on a timeline. |
+| Render profiling | Shows the duration and memory use of a Next.js server render. |
+| Cache, HTTP and logs | Shows ioredis calls, outbound HTTP calls and the logs of the request. |
+| Element inspector | Select an element on the page to see its source and its backend requests. |
+| MCP for agents | Coding agents can read the same data. |
+| Secret masking | Removes tokens, passwords and cookies before the overlay shows the data. |
 
 <table>
   <tr>
@@ -46,66 +50,98 @@ your app shows it.
 
 ## Quick start
 
-**1. Backend (NestJS)**
+### 1. Set up the backend (NestJS)
+
+Install the package:
 
 ```bash
 pnpm add @uplide/upspector-nest
 ```
 
+Add the module:
+
 ```ts
 NestUpspectorModule.forRoot({ enabled: process.env.APP_DEBUG === "true" });
 ```
 
-See the [backend guide](docs/content/docs/backend/index.mdx) for the middleware and the Prisma, Drizzle, ioredis and axios integrations.
+For the middleware and the Prisma, Drizzle, ioredis and axios integrations, refer to the [backend guide](docs/content/docs/backend/index.mdx).
 
-**2. Frontend (Next.js)**
+### 2. Set up the frontend (Next.js)
+
+Run the CLI in your Next.js app:
 
 ```bash
 pnpm dlx @uplide/upspector-cli init
 ```
 
-The CLI sets everything up in your Next.js app. Add `--dry-run` to preview the changes first.
-Using plain React? See the [React guide](docs/content/docs/frontend/react.mdx).
+To see the changes before the CLI applies them, add `--dry-run`.
+For plain React, refer to the [React guide](docs/content/docs/frontend/react.mdx).
 
-**3. Open your app** and click the Upspector logo in the bottom-right corner.
+### 3. Open the overlay
+
+Start your app. Click the Upspector logo in the bottom-right corner.
 
 > [!WARNING]
-> The overlay shows SQL text and bound parameters. Never enable Upspector on a production deployment that real users can reach.
+> The overlay shows SQL text and parameters. Do not enable Upspector on a production deployment that users can access.
 
-## Try the example
+## Example apps
 
-The repository includes a NestJS API and a Next.js app that are already wired up.
+The repository contains a NestJS API and a Next.js app. Upspector is set up in both apps.
 
-```bash
-pnpm install && pnpm build
-pnpm --filter example-nest-api db:push
-APP_DEBUG=true pnpm example:api              # terminal 1
-NEXT_PUBLIC_UPSPECTOR=true pnpm example:web   # terminal 2
-```
+1. Install and build:
 
-Open <http://localhost:4200>. The product list contains a deliberate N+1 — the Database tab will point it out.
+   ```bash
+   pnpm install && pnpm build
+   ```
+
+2. Create the database:
+
+   ```bash
+   pnpm --filter example-nest-api db:push
+   ```
+
+3. Start the API in terminal 1:
+
+   ```bash
+   APP_DEBUG=true pnpm example:api
+   ```
+
+4. Start the web app in terminal 2:
+
+   ```bash
+   NEXT_PUBLIC_UPSPECTOR=true pnpm example:web
+   ```
+
+5. Open <http://localhost:4200>.
+
+The product list has an N+1 problem. The Database tab shows it.
 
 ## Packages
 
-| Package | What it does |
+| Package | Description |
 | --- | --- |
-| `@uplide/upspector-nest` | Collects request data in a NestJS backend |
-| `@uplide/upspector-next` | Next.js App Router integration |
-| `@uplide/upspector` | The overlay and the `fetch` / axios capture |
-| `@uplide/upspector-cli` | `upspector init` for Next.js projects |
-| `@uplide/upspector-protocol` | Shared types between backend and frontend |
+| `@uplide/upspector-nest` | Records request data in a NestJS backend. |
+| `@uplide/upspector-next` | Integrates with the Next.js App Router. |
+| `@uplide/upspector` | Contains the overlay and the `fetch` and axios capture. |
+| `@uplide/upspector-cli` | Adds the `upspector init` command for Next.js projects. |
+| `@uplide/upspector-protocol` | Contains the types that the backend and frontend share. |
 
 ## Documentation
 
 - [How it works](docs/content/docs/how-it-works.mdx)
 - [Backend options and integrations](docs/content/docs/backend/options.mdx)
-- [Next.js setup](docs/content/docs/frontend/nextjs.mdx) · [axios](docs/content/docs/frontend/axios.mdx) · [Redaction](docs/content/docs/frontend/redaction.mdx)
-- [Element inspector](docs/content/docs/frontend/inspector.mdx) · [MCP for agents](docs/content/docs/frontend/mcp.mdx)
+- [Next.js setup](docs/content/docs/frontend/nextjs.mdx)
+- [axios](docs/content/docs/frontend/axios.mdx)
+- [Redaction](docs/content/docs/frontend/redaction.mdx)
+- [Element inspector](docs/content/docs/frontend/inspector.mdx)
+- [MCP for agents](docs/content/docs/frontend/mcp.mdx)
 - [Configuration reference](docs/content/docs/reference/config.mdx)
 
-Run the docs site locally with `pnpm docs:dev`.
+To run the documentation site on your computer, run `pnpm docs:dev`.
 
 ## Contributing
+
+Run these commands before you open a pull request:
 
 ```bash
 pnpm install
@@ -114,7 +150,17 @@ pnpm typecheck
 pnpm test
 ```
 
-See [Development](docs/content/docs/development.mdx) for more.
+For more information, refer to [Development](docs/content/docs/development.mdx).
+
+## About Uplide
+
+Upspector is built and maintained by [Uplide](https://uplide.com), a software
+engineering company based in London and Istanbul. We work in small,
+product-focused teams on AI consulting, MVP and product development, cloud and
+DevOps, and software consulting — with 50+ projects shipped for clients in 9
+countries.
+
+Have a project in mind? Visit **[uplide.com](https://uplide.com)**.
 
 ## License
 
