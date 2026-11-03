@@ -11,6 +11,7 @@ export { beginCapture, setCaptureTracker } from "./capture.js";
 export type { DebugbarCaptureTracker } from "./capture.js";
 export {
   DEFAULT_INSPECT_ENDPOINT,
+  EVENTS_ENDPOINT,
   defineDebugbarConfig,
   getDebugbarConfig,
   setDebugbarConfig,

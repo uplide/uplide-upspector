@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { configStep } from "../src/steps/config.js";
 import { envStep } from "../src/steps/env.js";
-import { inspectRouteStep } from "../src/steps/inspect-route.js";
+import { routeStep } from "../src/steps/route.js";
 import { instrumentationClientStep, instrumentationStep } from "../src/steps/instrumentation.js";
 import { layoutStep } from "../src/steps/layout.js";
 import { nextConfigStep } from "../src/steps/next-config.js";
@@ -327,11 +327,11 @@ export default RootLayout;
   });
 });
 
-describe("inspect-route", () => {
+describe("route", () => {
   it("creates the route under the app directory", () => {
-    const { written } = runStep(inspectRouteStep, { "src/app/layout.tsx": "" });
+    const { written } = runStep(routeStep, { "src/app/layout.tsx": "" });
 
-    expect(Object.keys(written)).toEqual(["src/app/api/debugbar/inspect/route.ts"]);
+    expect(Object.keys(written)).toEqual(["src/app/api/debugbar/[endpoint]/route.ts"]);
   });
 });
 

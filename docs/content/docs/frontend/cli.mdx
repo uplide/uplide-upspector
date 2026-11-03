@@ -24,7 +24,7 @@ anything.
 | `instrumentation` | Registers the debugbar first in `register()`, adding the hook or the file when missing. |
 | `instrumentation-client` | Installs the client right after the file's imports, or creates the file. |
 | `layout` | Opens the scope at the top of the root layout and renders `<DebugbarRoot />` in a `<Suspense>` at the end of `<body>`. |
-| `inspect-route` | Creates `app/api/debugbar/inspect/route.ts` for the element picker. |
+| `route` | Creates `app/api/debugbar/[endpoint]/route.ts`, serving the element picker and the MCP routes. Skipped when an `inspect` route from an older setup exists. |
 | `env` | Adds `NEXT_PUBLIC_DEBUGBAR=false` to `.env.example`, when there is one. `.env` files are never touched. |
 
 Files under `src/` (`src/app`, `src/instrumentation.ts`) are handled; the

@@ -12,23 +12,20 @@ run an N+1?"
 
 ## Setup
 
-Two routes — one the browser forwards to, one the agent connects to:
+Both endpoints — `events`, which the browser forwards to, and `mcp`, which
+the agent connects to — are served by the same route as the
+[inspector](/docs/frontend/inspector):
 
-```ts title="app/api/debugbar/events/route.ts"
-import { createEventsHandler } from '@uplide/debugbar-next/mcp';
-
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-export const { POST } = createEventsHandler();
-```
-
-```ts title="app/api/debugbar/mcp/route.ts"
-import { createMcpHandler } from '@uplide/debugbar-next/mcp';
+```ts title="app/api/debugbar/[endpoint]/route.ts"
+import { createDebugbarHandler } from '@uplide/debugbar-next/route';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const { POST, GET, DELETE } = createMcpHandler();
+export const { POST, GET, DELETE } = createDebugbarHandler();
 ```
+
+`createEventsHandler` and `createMcpHandler` from `@uplide/debugbar-next/mcp`
+are still exported for mounting an endpoint on a route of its own.
 
 Turn forwarding on in the shared config:
 
@@ -36,7 +33,7 @@ Turn forwarding on in the shared config:
 export default defineNextDebugbarConfig({
   enabled: process.env.NEXT_PUBLIC_DEBUGBAR === 'true',
   backend: { origins: [process.env.NEXT_PUBLIC_API_BASE_URL] },
-  eventsEndpoint: '/api/debugbar/events',
+  mcp: true,
 });
 ```
 

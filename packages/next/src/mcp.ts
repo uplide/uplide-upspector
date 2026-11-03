@@ -46,8 +46,8 @@ function isRenderPass(value: unknown): value is DebugbarRenderPass {
 }
 
 /**
- * Route handler the browser forwards its captured entries to (see
- * `eventsEndpoint`), so the MCP route can hand them to an agent. Development
+ * Route handler the browser forwards its captured entries to (see the `mcp`
+ * config field), so the MCP route can hand them to an agent. Development
  * only, like the inspector: the entries carry SQL and bound parameters.
  */
 export function createEventsHandler({
