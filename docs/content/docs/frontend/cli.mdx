@@ -1,0 +1,57 @@
+---
+title: Automatic setup
+description: Wire a Next.js App Router project with one command.
+icon: Terminal
+---
+
+`@uplide/debugbar-cli` does the [Next.js setup](/docs/frontend/nextjs) for
+you: it installs the packages and writes or edits the five files.
+
+```bash
+pnpm dlx @uplide/debugbar-cli init
+```
+
+Run it in the project root, with a clean git working tree, so the result is
+one diff you can review. `--dry-run` prints that diff without writing
+anything.
+
+## What it does
+
+| Step | Change |
+| --- | --- |
+| `config` | Creates `debugbar.config.ts`. It asks which env variable holds the backend URL, suggesting one named in `.env.example`, else `NEXT_PUBLIC_API_BASE_URL`. |
+| `next-config` | Wraps the default export of `next.config.*` in `withDebugbar(...)`, outside any other plugin. |
+| `instrumentation` | Registers the debugbar first in `register()`, adding the hook or the file when missing. |
+| `instrumentation-client` | Installs the client right after the file's imports, or creates the file. |
+| `layout` | Opens the scope at the top of the root layout and renders `<DebugbarRoot />` in a `<Suspense>` at the end of `<body>`. |
+| `inspect-route` | Creates `app/api/debugbar/inspect/route.ts` for the element picker. |
+| `env` | Adds `NEXT_PUBLIC_DEBUGBAR=false` to `.env.example`, when there is one. `.env` files are never touched. |
+
+Files under `src/` (`src/app`, `src/instrumentation.ts`) are handled; the
+config always goes in the project root, where `withDebugbar` reads it.
+
+Every step first checks whether its part is already in place, so running
+`init` again changes nothing.
+
+## When a step can't apply
+
+A step that doesn't recognize a file leaves it untouched and prints the
+snippet to add by hand, for example when:
+
+- `next.config.*` is CommonJS (`module.exports`) or exports a config function;
+- the root layout is a client component, or its `<body>` is rendered by
+  another component;
+- `register()` is declared in a way other than a function.
+
+The [element picker](/docs/frontend/inspector)'s `code-inspector-plugin`
+rule is not added; set it up from that page if you want click-to-source.
+
+## Options
+
+| Option | |
+| --- | --- |
+| `--dry-run` | Print the changes instead of writing them. |
+| `--yes`, `-y` | Don't ask; take the suggested answers. |
+| `--api-env <name>` | Env variable holding the backend's base URL. |
+| `--allow-dirty` | Run with uncommitted changes in the git working tree. |
+| `--cwd <dir>` | Project directory. |
