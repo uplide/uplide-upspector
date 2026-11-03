@@ -1,0 +1,55 @@
+{
+  "name": "@uplide/upspector",
+  "version": "0.1.0",
+  "description": "Browser and SSR capture of the Upspector payload for axios and fetch, plus the React overlay.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./axios": {
+      "types": "./dist/axios.d.ts",
+      "default": "./dist/axios.js"
+    },
+    "./fetch": {
+      "types": "./dist/fetch.d.ts",
+      "default": "./dist/fetch.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "default": "./dist/react/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@uplide/upspector-protocol": "workspace:*",
+    "zustand": "^5.0.8"
+  },
+  "peerDependencies": {
+    "axios": "^1.7.0",
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "axios": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "axios": "^1.12.2",
+    "react": "19.2.4"
+  }
+}

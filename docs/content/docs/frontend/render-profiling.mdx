@@ -4,7 +4,7 @@ description: Measure the Next.js server render pass in the Render tab.
 icon: Gauge
 ---
 
-Every page rendered with [`openDebugbarScope`](/docs/frontend/nextjs) gets a
+Every page rendered with [`openUpspectorScope`](/docs/frontend/nextjs) gets a
 render pass in the **Render** tab: wall time, heap and RSS deltas, and GC
 pressure.
 
@@ -14,7 +14,7 @@ Pass `profile: true` to also run V8's sampling heap profiler during the
 render and attribute allocations to stacks:
 
 ```tsx title="app/layout.tsx"
-openDebugbarScope({ profile: process.env.DEBUGBAR_RENDER_PROFILE === 'true' });
+openUpspectorScope({ profile: process.env.UPSPECTOR_RENDER_PROFILE === 'true' });
 ```
 
 The profiler adds overhead; keep it behind its own flag.
@@ -24,7 +24,7 @@ The profiler adds overhead; keep it behind its own flag.
 Wrap an async server component to see its render window:
 
 ```tsx title="app/products/product-list.tsx"
-import { measureServerComponent } from '@uplide/debugbar-next/server';
+import { measureServerComponent } from '@uplide/upspector-next/server';
 
 export const ProductList = measureServerComponent('ProductList', async () => {
   const products = await getProducts();
@@ -33,4 +33,4 @@ export const ProductList = measureServerComponent('ProductList', async () => {
 ```
 
 It is a pass-through when no render pass started — every request with the
-debugbar off.
+Upspector off.

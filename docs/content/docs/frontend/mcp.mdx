@@ -16,22 +16,22 @@ Both endpoints — `events`, which the browser forwards to, and `mcp`, which
 the agent connects to — are served by the same route as the
 [inspector](/docs/frontend/inspector):
 
-```ts title="app/api/debugbar/[endpoint]/route.ts"
-import { createDebugbarHandler } from '@uplide/debugbar-next/route';
+```ts title="app/api/upspector/[endpoint]/route.ts"
+import { createUpspectorHandler } from '@uplide/upspector-next/route';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const { POST, GET, DELETE } = createDebugbarHandler();
+export const { POST, GET, DELETE } = createUpspectorHandler();
 ```
 
-`createEventsHandler` and `createMcpHandler` from `@uplide/debugbar-next/mcp`
+`createEventsHandler` and `createMcpHandler` from `@uplide/upspector-next/mcp`
 are still exported for mounting an endpoint on a route of its own.
 
 Turn forwarding on in the shared config:
 
-```ts title="debugbar.config.ts"
-export default defineNextDebugbarConfig({
-  enabled: process.env.NEXT_PUBLIC_DEBUGBAR === 'true',
+```ts title="upspector.config.ts"
+export default defineNextUpspectorConfig({
+  enabled: process.env.NEXT_PUBLIC_UPSPECTOR === 'true',
   backend: { origins: [process.env.NEXT_PUBLIC_API_BASE_URL] },
   mcp: true,
 });
@@ -40,7 +40,7 @@ export default defineNextDebugbarConfig({
 Then register the server with the agent:
 
 ```bash
-claude mcp add --transport http debugbar http://localhost:3000/api/debugbar/mcp
+claude mcp add --transport http upspector http://localhost:3000/api/upspector/mcp
 ```
 
 ## Tools

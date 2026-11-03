@@ -2,15 +2,15 @@ import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
 import {
-  type DebugbarCallPattern,
-  type DebugbarCommitInfo,
-  type DebugbarDataCall,
-  type DebugbarInspectResult,
-  type DebugbarInspectSource,
+  type UpspectorCallPattern,
+  type UpspectorCommitInfo,
+  type UpspectorDataCall,
+  type UpspectorInspectResult,
+  type UpspectorInspectSource,
   isReadableSourcePath,
   parseInspectPath,
   scanDataCalls,
-} from "@uplide/debugbar";
+} from "@uplide/upspector";
 
 /**
  * Server half of the element inspector: turns `data-insp-path` attributes into
@@ -82,7 +82,7 @@ export async function findRepoRoot(cwd: string): Promise<string | null> {
   return stdout?.trim() || null;
 }
 
-const PORCELAIN_FIELDS: Record<string, keyof DebugbarCommitInfo> = {
+const PORCELAIN_FIELDS: Record<string, keyof UpspectorCommitInfo> = {
   author: "author",
   "author-mail": "email",
   summary: "summary",
@@ -96,7 +96,7 @@ async function blameLine(
   repoRoot: string,
   file: string,
   line: number,
-): Promise<DebugbarCommitInfo | null> {
+): Promise<UpspectorCommitInfo | null> {
   const stdout = await git(repoRoot, [
     "blame",
     "-L",
@@ -111,7 +111,7 @@ async function blameLine(
   const commit = lines[0]?.split(" ")[0];
   if (!commit) return null;
 
-  const info: DebugbarCommitInfo = {
+  const info: UpspectorCommitInfo = {
     commit: commit.slice(0, 9),
     author: "",
     email: "",
@@ -144,7 +144,7 @@ const LOG_FORMAT = "%H%x00%an%x00%ae%x00%aI%x00%s";
 async function lastFileCommit(
   repoRoot: string,
   file: string,
-): Promise<DebugbarCommitInfo | null> {
+): Promise<UpspectorCommitInfo | null> {
   const stdout = await git(repoRoot, [
     "log",
     "-1",
@@ -172,27 +172,27 @@ const SOURCE_EXTENSIONS = ["", ".ts", ".tsx", "/index.ts", "/index.tsx"];
  * Path aliases as the host's tsconfig declares them: specifier prefix (e.g.
  * `"@/"`) → repository-relative directory (e.g. `"apps/web"`).
  */
-export type DebugbarPathAliases = Record<string, string>;
+export type UpspectorPathAliases = Record<string, string>;
 
-export interface DebugbarInspectOptions {
+export interface UpspectorInspectOptions {
   /** Data-call patterns scanned in each file; defaults to the generic set. */
-  patterns?: readonly DebugbarCallPattern[];
+  patterns?: readonly UpspectorCallPattern[];
   /** Used to follow imports when a resolver reads another module. */
-  aliases?: DebugbarPathAliases;
+  aliases?: UpspectorPathAliases;
   /**
    * Gives a data call the backend route it hits when the call itself carries
    * no path literal (a service layer, an endpoint registry). First defined
    * answer wins.
    */
-  resolvers?: readonly DebugbarCallResolver[];
+  resolvers?: readonly UpspectorCallResolver[];
 }
 
-export interface DebugbarResolverContext {
+export interface UpspectorResolverContext {
   repoRoot: string;
   /** Repository-relative file the call was found in. */
   file: string;
   source: string;
-  call: DebugbarDataCall;
+  call: UpspectorDataCall;
   /** Reads a module imported from `fromFile`, honouring the aliases. */
   readModule: (
     fromFile: string,
@@ -200,8 +200,8 @@ export interface DebugbarResolverContext {
   ) => Promise<{ file: string; source: string } | null>;
 }
 
-export type DebugbarCallResolver = (
-  context: DebugbarResolverContext,
+export type UpspectorCallResolver = (
+  context: UpspectorResolverContext,
 ) => Promise<string | undefined> | string | undefined;
 
 function joinSegments(parts: string[]): string {
@@ -224,7 +224,7 @@ export async function readSourceModule(
   repoRoot: string,
   fromFile: string,
   specifier: string,
-  aliases: DebugbarPathAliases = {},
+  aliases: UpspectorPathAliases = {},
 ): Promise<{ file: string; source: string } | null> {
   let base: string | null = null;
 
@@ -262,8 +262,8 @@ export async function readSourceModule(
 }
 
 async function resolveCallEndpoint(
-  context: DebugbarResolverContext,
-  resolvers: readonly DebugbarCallResolver[],
+  context: UpspectorResolverContext,
+  resolvers: readonly UpspectorCallResolver[],
 ): Promise<string | undefined> {
   if (context.call.endpoint) return context.call.endpoint;
 
@@ -278,8 +278,8 @@ async function resolveCallEndpoint(
 async function resolveFrame(
   repoRoot: string,
   value: string,
-  options: DebugbarInspectOptions,
-): Promise<DebugbarInspectSource | null> {
+  options: UpspectorInspectOptions,
+): Promise<UpspectorInspectSource | null> {
   const frame = parseInspectPath(value);
   if (!frame) return null;
   if (!(await isServableSource(repoRoot, frame.file))) {
@@ -353,8 +353,8 @@ async function resolveFrame(
 export async function resolveInspectFrames(
   repoRoot: string,
   paths: string[],
-  options: DebugbarInspectOptions = {},
-): Promise<DebugbarInspectResult> {
+  options: UpspectorInspectOptions = {},
+): Promise<UpspectorInspectResult> {
   const resolved = await Promise.all(
     paths
       .slice(0, MAX_INSPECT_FRAMES)
@@ -363,6 +363,6 @@ export async function resolveInspectFrames(
 
   return {
     repoRoot,
-    frames: resolved.filter((frame): frame is DebugbarInspectSource => !!frame),
+    frames: resolved.filter((frame): frame is UpspectorInspectSource => !!frame),
   };
 }

@@ -1,23 +1,23 @@
 import { sanitizeParams, truncateText } from './sanitize';
 import type {
-  DebugbarCacheEntry,
-  DebugbarHttpEntry,
-  DebugbarLogEntry,
-  DebugbarLogLevel,
-  DebugbarPayload,
-  DebugbarQueryEntry,
-  DebugbarQueryKind,
-  DebugbarSpan,
-  ResolvedDebugbarOptions,
+  UpspectorCacheEntry,
+  UpspectorHttpEntry,
+  UpspectorLogEntry,
+  UpspectorLogLevel,
+  UpspectorPayload,
+  UpspectorQueryEntry,
+  UpspectorQueryKind,
+  UpspectorSpan,
+  ResolvedUpspectorOptions,
 } from './types';
-import { DEBUGBAR_PAYLOAD_VERSION } from './types';
+import { UPSPECTOR_PAYLOAD_VERSION } from './types';
 
 /** Milliseconds, rounded to 0.01 — sub-10µs noise is not information. */
 function ms(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-export interface DebugbarCollectorInit {
+export interface UpspectorCollectorInit {
   requestId: string;
   method: string;
   url: string;
@@ -34,11 +34,11 @@ export interface DebugbarCollectorInit {
  * `count`/`totalMs` but is not retained, and the bucket's `truncated` flag
  * flips. Payload size is therefore independent of request shape.
  */
-export class DebugbarCollector {
+export class UpspectorCollector {
   readonly requestId: string;
   readonly startHr: number;
 
-  /** Set by `DebugbarInterceptor` so the `serialize` span can start there. */
+  /** Set by `UpspectorInterceptor` so the `serialize` span can start there. */
   handlerEndHr?: number;
 
   private readonly method: string;
@@ -46,24 +46,24 @@ export class DebugbarCollector {
   private readonly startedAt: string;
   private readonly heapUsedAtStart: number;
 
-  private readonly spans: DebugbarSpan[] = [];
+  private readonly spans: UpspectorSpan[] = [];
 
-  private readonly queries: DebugbarQueryEntry[] = [];
+  private readonly queries: UpspectorQueryEntry[] = [];
   private queryCount = 0;
   private queryTotalMs = 0;
   private queriesTruncated = false;
 
-  private readonly httpCalls: DebugbarHttpEntry[] = [];
+  private readonly httpCalls: UpspectorHttpEntry[] = [];
   private httpCount = 0;
   private httpTotalMs = 0;
   private httpTruncated = false;
 
-  private readonly cacheOps: DebugbarCacheEntry[] = [];
+  private readonly cacheOps: UpspectorCacheEntry[] = [];
   private cacheCount = 0;
   private cacheTotalMs = 0;
   private cacheTruncated = false;
 
-  private readonly logs: DebugbarLogEntry[] = [];
+  private readonly logs: UpspectorLogEntry[] = [];
   private logCount = 0;
   private logsTruncated = false;
 
@@ -73,8 +73,8 @@ export class DebugbarCollector {
   private statusCode?: number;
 
   constructor(
-    private readonly options: ResolvedDebugbarOptions,
-    init: DebugbarCollectorInit,
+    private readonly options: ResolvedUpspectorOptions,
+    init: UpspectorCollectorInit,
   ) {
     this.requestId = init.requestId;
     this.startHr = init.startHr;
@@ -121,7 +121,7 @@ export class DebugbarCollector {
   }
 
   recordQuery(entry: {
-    kind: DebugbarQueryKind;
+    kind: UpspectorQueryKind;
     sql: string;
     params?: unknown[];
     startHr: number;
@@ -139,7 +139,7 @@ export class DebugbarCollector {
       return;
     }
 
-    const stored: DebugbarQueryEntry = {
+    const stored: UpspectorQueryEntry = {
       index,
       kind: entry.kind,
       sql: truncateText(entry.sql, this.options.maxSqlLength),
@@ -179,7 +179,7 @@ export class DebugbarCollector {
       return;
     }
 
-    const stored: DebugbarHttpEntry = {
+    const stored: UpspectorHttpEntry = {
       method: entry.method,
       url: truncateText(entry.url, this.options.maxSqlLength),
       startMs: ms(entry.startHr - this.startHr),
@@ -212,7 +212,7 @@ export class DebugbarCollector {
       return;
     }
 
-    const stored: DebugbarCacheEntry = {
+    const stored: UpspectorCacheEntry = {
       command: entry.command,
       argCount: entry.argCount,
       startMs: ms(entry.startHr - this.startHr),
@@ -230,7 +230,7 @@ export class DebugbarCollector {
   }
 
   recordLog(entry: {
-    level: DebugbarLogLevel;
+    level: UpspectorLogLevel;
     message: string;
     context?: string;
   }): void {
@@ -241,7 +241,7 @@ export class DebugbarCollector {
       return;
     }
 
-    const stored: DebugbarLogEntry = {
+    const stored: UpspectorLogEntry = {
       level: entry.level,
       message: truncateText(entry.message, this.options.maxSqlLength),
       atMs: this.nowMs(),
@@ -278,11 +278,11 @@ export class DebugbarCollector {
    * Build the wire payload. Pure and repeatable: nothing here mutates the
    * buckets, so a second call cannot double-count.
    */
-  snapshot(): DebugbarPayload {
+  snapshot(): UpspectorPayload {
     const memory = process.memoryUsage();
 
     return {
-      version: DEBUGBAR_PAYLOAD_VERSION,
+      version: UPSPECTOR_PAYLOAD_VERSION,
       requestId: this.requestId,
       startedAt: this.startedAt,
       durationMs: this.nowMs(),

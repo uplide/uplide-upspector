@@ -1,18 +1,18 @@
 import {
-  type DebugbarConfig,
-  type DebugbarEntry,
-  getDebugbarConfig,
+  type UpspectorConfig,
+  type UpspectorEntry,
+  getUpspectorConfig,
   setCaptureTracker,
-  setDebugbarConfig,
-} from "@uplide/debugbar";
-import { attachDebugbar } from "@uplide/debugbar/axios";
-import { installFetchCapture } from "@uplide/debugbar/fetch";
-import { DebugbarOverlay, DebugbarSsrHydrator } from "@uplide/debugbar/react";
+  setUpspectorConfig,
+} from "@uplide/upspector";
+import { attachUpspector } from "@uplide/upspector/axios";
+import { installFetchCapture } from "@uplide/upspector/fetch";
+import { UpspectorOverlay, UpspectorSsrHydrator } from "@uplide/upspector/react";
 import type { AxiosInstance } from "axios";
 import { beginRenderPass, snapshotRenderPass } from "./server-render.js";
 import {
   currentSsrStore,
-  getDebugbarSsrStore,
+  getUpspectorSsrStore,
   isSsrCaptureActive,
   publishSsrStore,
   pushSsrEntry,
@@ -44,8 +44,8 @@ const SSR_CAPTURE = {
  * Next's dedup and Data Cache: it only ever sees real network calls. That
  * position survives for the life of a production server.
  */
-export function registerDebugbar(config: DebugbarConfig): void {
-  const resolved = setDebugbarConfig(config);
+export function registerUpspector(config: UpspectorConfig): void {
+  const resolved = setUpspectorConfig(config);
   if (!resolved.enabled) return;
 
   installFetchCapture(SSR_CAPTURE);
@@ -62,11 +62,11 @@ export function registerDebugbar(config: DebugbarConfig): void {
  * wrapper already consumed passes it unread, and a replay from Next's caches
  * is recognised by its request id.
  */
-export function openDebugbarScope(options: { profile?: boolean } = {}): void {
-  if (!getDebugbarConfig().enabled) return;
+export function openUpspectorScope(options: { profile?: boolean } = {}): void {
+  if (!getUpspectorConfig().enabled) return;
 
   installFetchCapture(SSR_CAPTURE);
-  getDebugbarSsrStore().active = true;
+  getUpspectorSsrStore().active = true;
   publishSsrStore();
   setCaptureTracker(() => {
     const store = currentSsrStore();
@@ -94,8 +94,8 @@ export function openDebugbarScope(options: { profile?: boolean } = {}): void {
  * before any interceptor that snapshots response bodies, so the payload key is
  * lifted off first.
  */
-export function attachDebugbarServerAxios(api: AxiosInstance): () => void {
-  return attachDebugbar(api, {
+export function attachUpspectorServerAxios(api: AxiosInstance): () => void {
+  return attachUpspector(api, {
     source: "ssr",
     inScope: isSsrCaptureActive,
     onEntry: pushSsrEntry,
@@ -113,10 +113,10 @@ const DEFAULT_SETTLE_MS = 50;
  * Awaits every server-side capture of this render pass, including ones that
  * start while waiting, then returns what was collected.
  */
-export async function waitForDebugbarSsrEntries(
+export async function waitForUpspectorSsrEntries(
   settleMs = DEFAULT_SETTLE_MS,
-): Promise<DebugbarEntry[]> {
-  const store = getDebugbarSsrStore();
+): Promise<UpspectorEntry[]> {
+  const store = getUpspectorSsrStore();
   let seen = -1;
 
   while (store.pending.size > 0 || store.started !== seen) {
@@ -133,7 +133,7 @@ export async function waitForDebugbarSsrEntries(
  * mounts the overlay. Render it after `children` (inside `<Suspense>` so it
  * streams last) — by then every server component request has finished.
  */
-export async function DebugbarRoot({
+export async function UpspectorRoot({
   nonce,
   settleMs,
 }: {
@@ -141,15 +141,15 @@ export async function DebugbarRoot({
   /** Quiet period that marks the render as done. Default 50 ms. */
   settleMs?: number;
 } = {}) {
-  if (!getDebugbarConfig().enabled) return null;
+  if (!getUpspectorConfig().enabled) return null;
 
-  const entries = await waitForDebugbarSsrEntries(settleMs);
+  const entries = await waitForUpspectorSsrEntries(settleMs);
   const renderPass = await snapshotRenderPass();
 
   return (
     <>
-      <DebugbarSsrHydrator entries={entries} renderPass={renderPass} />
-      <DebugbarOverlay nonce={nonce} />
+      <UpspectorSsrHydrator entries={entries} renderPass={renderPass} />
+      <UpspectorOverlay nonce={nonce} />
     </>
   );
 }

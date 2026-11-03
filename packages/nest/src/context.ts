@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import type { DebugbarCollector } from './collector';
+import type { UpspectorCollector } from './collector';
 
 /**
  * Request-scoped collector store. AsyncLocalStorage rather than a Nest
@@ -7,19 +7,19 @@ import type { DebugbarCollector } from './collector';
  * logger all run outside the DI graph, and the store must survive `await`
  * boundaries — including Prisma `$transaction` callbacks.
  *
- * `getDebugbarCollector()` returning `undefined` is the single mechanism that
+ * `getUpspectorCollector()` returning `undefined` is the single mechanism that
  * makes every integration free when the flag is off: no store is ever created,
  * so each wrapper returns after one `getStore()` call.
  */
-const storage = new AsyncLocalStorage<DebugbarCollector>();
+const storage = new AsyncLocalStorage<UpspectorCollector>();
 
-export function runWithDebugbar<T>(
-  collector: DebugbarCollector,
+export function runWithUpspector<T>(
+  collector: UpspectorCollector,
   fn: () => T,
 ): T {
   return storage.run(collector, fn);
 }
 
-export function getDebugbarCollector(): DebugbarCollector | undefined {
+export function getUpspectorCollector(): UpspectorCollector | undefined {
   return storage.getStore();
 }

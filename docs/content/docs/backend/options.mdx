@@ -1,11 +1,11 @@
 ---
 title: Options
-description: Every option NestDebugbarModule.forRoot and resolveDebugbarOptions accept.
+description: Every option NestUpspectorModule.forRoot and resolveUpspectorOptions accept.
 icon: SlidersHorizontal
 ---
 
 ```ts
-NestDebugbarModule.forRoot({
+NestUpspectorModule.forRoot({
   enabled: process.env.APP_DEBUG === 'true',
   maxQueries: 500,
   sanitizeParams: (sql, params) => params.map(() => '?'),
@@ -22,10 +22,10 @@ NestDebugbarModule.forRoot({
     responseKey: {
       type: 'string',
       description: 'Top-level response key. Must equal the frontend `responseKey`.',
-      default: '"debugbar"',
+      default: '"upspector"',
     },
     skip: {
-      type: '(req: DebugbarRequestLike) => boolean',
+      type: '(req: UpspectorRequestLike) => boolean',
       description: 'Return true to leave a request completely uninstrumented (health checks, metrics).',
       default: '() => false',
     },

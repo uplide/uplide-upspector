@@ -1,11 +1,11 @@
 ---
 title: NestJS setup
-description: Collect a debugbar payload for every request in a NestJS app.
+description: Collect an Upspector payload for every request in a NestJS app.
 icon: Server
 ---
 
 ```bash
-pnpm add @uplide/debugbar-nest
+pnpm add @uplide/upspector-nest
 ```
 
 Peer dependencies: `@nestjs/common` and `@nestjs/core` 10 or newer, `rxjs` 7.
@@ -18,10 +18,10 @@ Peer dependencies: `@nestjs/common` and `@nestjs/core` 10 or newer, `rxjs` 7.
 Resolve the options in their own file so the module, the middleware and the
 Prisma adapter share one object.
 
-```ts title="src/debugbar.ts"
-import { resolveDebugbarOptions } from '@uplide/debugbar-nest';
+```ts title="src/upspector.ts"
+import { resolveUpspectorOptions } from '@uplide/upspector-nest';
 
-export const debugbarOptions = resolveDebugbarOptions({
+export const upspectorOptions = resolveUpspectorOptions({
   enabled: process.env.APP_DEBUG === 'true',
   skip: (req) => (req.originalUrl ?? req.url ?? '').startsWith('/api/health'),
 });
@@ -32,16 +32,16 @@ export const debugbarOptions = resolveDebugbarOptions({
 
 ### Register the module
 
-`NestDebugbarModule.forRoot` is global. It provides the options under the
-`DEBUGBAR_OPTIONS` token and registers `DebugbarInterceptor`, which adds the
+`NestUpspectorModule.forRoot` is global. It provides the options under the
+`UPSPECTOR_OPTIONS` token and registers `UpspectorInterceptor`, which adds the
 route identity and the handler span.
 
 ```ts title="src/app.module.ts"
-import { NestDebugbarModule } from '@uplide/debugbar-nest';
-import { debugbarOptions } from './debugbar';
+import { NestUpspectorModule } from '@uplide/upspector-nest';
+import { upspectorOptions } from './upspector';
 
 @Module({
-  imports: [NestDebugbarModule.forRoot(debugbarOptions)],
+  imports: [NestUpspectorModule.forRoot(upspectorOptions)],
 })
 export class AppModule {}
 ```
@@ -57,26 +57,26 @@ too.
 
 ```ts title="src/main.ts"
 import {
-  createDebugbarMiddleware,
-  DEBUGBAR_HEADER,
-  DebugbarConsoleLogger,
+  createUpspectorMiddleware,
+  UPSPECTOR_HEADER,
+  UpspectorConsoleLogger,
   installAxiosInstrumentation,
   installFetchInstrumentation,
-} from '@uplide/debugbar-nest';
+} from '@uplide/upspector-nest';
 import axios from 'axios';
-import { debugbarOptions } from './debugbar';
+import { upspectorOptions } from './upspector';
 
 const app = await NestFactory.create(AppModule, {
-  logger: new DebugbarConsoleLogger(),
+  logger: new UpspectorConsoleLogger(),
 });
 
 app.enableCors({
   origin: process.env.WEB_ORIGIN,
-  exposedHeaders: [DEBUGBAR_HEADER],
+  exposedHeaders: [UPSPECTOR_HEADER],
 });
 
-if (debugbarOptions.enabled) {
-  app.use(createDebugbarMiddleware(debugbarOptions));
+if (upspectorOptions.enabled) {
+  app.use(createUpspectorMiddleware(upspectorOptions));
   installAxiosInstrumentation(axios);
   installFetchInstrumentation();
 }
@@ -94,8 +94,8 @@ Wrap the Prisma driver adapter or Drizzle database and Redis clients — see
 </Steps>
 
 <Callout type="warn" title="CORS">
-  Browsers only see `x-debugbar` cross-origin when CORS exposes it. Without
-  `exposedHeaders: ["x-debugbar"]` the browser `fetch` adapter skips the body
+  Browsers only see `x-upspector` cross-origin when CORS exposes it. Without
+  `exposedHeaders: ["x-upspector"]` the browser `fetch` adapter skips the body
   and the bar stays empty for client requests.
 </Callout>
 
@@ -105,9 +105,9 @@ The module exposes the resolved options, so code that has no access to your
 options file can read them back:
 
 ```ts
-import { DEBUGBAR_OPTIONS, type ResolvedDebugbarOptions } from '@uplide/debugbar-nest';
+import { UPSPECTOR_OPTIONS, type ResolvedUpspectorOptions } from '@uplide/upspector-nest';
 
-const options = app.get<ResolvedDebugbarOptions>(DEBUGBAR_OPTIONS);
+const options = app.get<ResolvedUpspectorOptions>(UPSPECTOR_OPTIONS);
 ```
 
 ## What gets injected

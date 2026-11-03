@@ -20,7 +20,7 @@ function isLoopback(hostname: string): boolean {
 }
 
 /**
- * `next dev` listens on every interface, and the debugbar routes hand out
+ * `next dev` listens on every interface, and the Upspector routes hand out
  * source code and captured queries, so the request itself has to prove it
  * comes from the developer's own machine:
  * - a loopback `Host` (or an allowed one) shuts out the LAN and DNS rebinding,

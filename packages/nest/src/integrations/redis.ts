@@ -1,4 +1,4 @@
-import { getDebugbarCollector } from '../context';
+import { getUpspectorCollector } from '../context';
 
 /**
  * `ioredis` `Command`: `Commander.sendCommand(command, stream?, node?)` is the
@@ -43,7 +43,7 @@ export function instrumentRedisClient<T extends object>(client: T): T {
   const originalSendCommand = target.sendCommand.bind(target);
 
   target.sendCommand = (command, stream, node) => {
-    const collector = getDebugbarCollector();
+    const collector = getUpspectorCollector();
     if (!collector) {
       return originalSendCommand(command, stream, node);
     }

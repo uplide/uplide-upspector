@@ -23,14 +23,14 @@ describe("init", () => {
       "skipped",
     ]);
     expect(first.changes.map(({ path }) => path).sort()).toEqual([
-      "app/api/debugbar/[endpoint]/route.ts",
+      "app/api/upspector/[endpoint]/route.ts",
       "app/layout.tsx",
-      "debugbar.config.ts",
       "instrumentation-client.ts",
       "instrumentation.ts",
       "next.config.ts",
+      "upspector.config.ts",
     ]);
-    expect(readProjectFile(root, "next.config.ts")).toContain("withDebugbar(nextConfig)");
+    expect(readProjectFile(root, "next.config.ts")).toContain("withUpspector(nextConfig)");
 
     const second = await init({ cwd: root, ...quiet });
 
@@ -45,10 +45,10 @@ describe("init", () => {
     const { changes } = await init({ cwd: root, ...quiet, dryRun: true, log: (line) => lines.push(line) });
 
     expect(changes).toHaveLength(6);
-    expect(existsSync(join(root, "debugbar.config.ts"))).toBe(false);
-    expect(lines.join("\n")).toContain("+export default withDebugbar(nextConfig);");
+    expect(existsSync(join(root, "upspector.config.ts"))).toBe(false);
+    expect(lines.join("\n")).toContain("+export default withUpspector(nextConfig);");
     expect(lines.join("\n")).toContain(
-      "would run: npm install @uplide/debugbar @uplide/debugbar-next",
+      "would run: npm install @uplide/upspector @uplide/upspector-next",
     );
   });
 
@@ -57,7 +57,7 @@ describe("init", () => {
 
     await init({ cwd: root, ...quiet });
 
-    expect(readProjectFile(root, "debugbar.config.ts")).toContain(
+    expect(readProjectFile(root, "upspector.config.ts")).toContain(
       "origins: [process.env.NEXT_PUBLIC_BACKEND_URL]",
     );
   });
@@ -67,14 +67,14 @@ describe("init", () => {
 
     await init({ cwd: root, ...quiet, ask: async () => "NEXT_PUBLIC_API" });
 
-    expect(readProjectFile(root, "debugbar.config.ts")).toContain("process.env.NEXT_PUBLIC_API]");
+    expect(readProjectFile(root, "upspector.config.ts")).toContain("process.env.NEXT_PUBLIC_API]");
   });
 
   it("refuses a variable name that isn't an identifier", async () => {
     const root = createProject();
 
     await expect(init({ cwd: root, ...quiet, apiEnv: "API URL" })).rejects.toThrow(SetupError);
-    expect(existsSync(join(root, "debugbar.config.ts"))).toBe(false);
+    expect(existsSync(join(root, "upspector.config.ts"))).toBe(false);
   });
 
   it("refuses a project without the App Router", async () => {
@@ -99,7 +99,7 @@ describe("init", () => {
 
     await init({ cwd: join(root, "apps/web"), ...quiet, log: (line) => lines.push(line) });
 
-    expect(lines).toContain("\nwould run: pnpm add @uplide/debugbar @uplide/debugbar-next");
+    expect(lines).toContain("\nwould run: pnpm add @uplide/upspector @uplide/upspector-next");
   });
 
   it("refuses Next.js before 15.3", async () => {

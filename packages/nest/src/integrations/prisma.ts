@@ -1,12 +1,12 @@
-import { getDebugbarCollector } from '../context';
+import { getUpspectorCollector } from '../context';
 import { resolveCallSite } from '../sanitize';
-import type { DebugbarQueryKind, ResolvedDebugbarOptions } from '../types';
+import type { UpspectorQueryKind, ResolvedUpspectorOptions } from '../types';
 
 /**
  * Prisma's `SqlQuery`. Declared structurally so this package never imports
  * `@prisma/*` and stays installable in projects without Prisma.
  */
-export interface DebugbarSqlQuery {
+export interface UpspectorSqlQuery {
   sql: string;
   args?: unknown[];
   argTypes?: unknown[];
@@ -15,8 +15,8 @@ export interface DebugbarSqlQuery {
 interface SqlQueryableLike {
   adapterName: string;
   provider: string;
-  queryRaw(params: DebugbarSqlQuery): Promise<unknown>;
-  executeRaw(params: DebugbarSqlQuery): Promise<unknown>;
+  queryRaw(params: UpspectorSqlQuery): Promise<unknown>;
+  executeRaw(params: UpspectorSqlQuery): Promise<unknown>;
 }
 
 interface TransactionLike extends SqlQueryableLike {
@@ -36,7 +36,7 @@ interface SqlAdapterLike extends SqlQueryableLike {
   underlyingDriver?: unknown;
 }
 
-export interface DebugbarSqlAdapterFactoryLike {
+export interface UpspectorSqlAdapterFactoryLike {
   adapterName: string;
   provider: string;
   connect(): Promise<SqlAdapterLike>;
@@ -47,13 +47,13 @@ export interface DebugbarSqlAdapterFactoryLike {
 const CALL_SITE_STACK_LIMIT = 40;
 
 async function timeQuery<T>(
-  options: ResolvedDebugbarOptions,
-  kind: DebugbarQueryKind,
-  query: DebugbarSqlQuery,
+  options: ResolvedUpspectorOptions,
+  kind: UpspectorQueryKind,
+  query: UpspectorSqlQuery,
   inTransaction: boolean,
   run: () => Promise<T>,
 ): Promise<T> {
-  const collector = getDebugbarCollector();
+  const collector = getUpspectorCollector();
   if (!collector) {
     return run();
   }
@@ -94,7 +94,7 @@ async function timeQuery<T>(
 
 function wrapTransaction(
   transaction: TransactionLike,
-  options: ResolvedDebugbarOptions,
+  options: ResolvedUpspectorOptions,
 ): TransactionLike {
   const wrapped: TransactionLike = {
     adapterName: transaction.adapterName,
@@ -130,7 +130,7 @@ function wrapTransaction(
 
 function wrapAdapter(
   adapter: SqlAdapterLike,
-  options: ResolvedDebugbarOptions,
+  options: ResolvedUpspectorOptions,
 ): SqlAdapterLike {
   const wrapped: SqlAdapterLike = {
     adapterName: adapter.adapterName,
@@ -182,7 +182,7 @@ function wrapAdapter(
  */
 export function instrumentPrismaDriverAdapter<T extends object>(
   factory: T,
-  options: ResolvedDebugbarOptions,
+  options: ResolvedUpspectorOptions,
 ): T {
   if (!options.enabled) {
     return factory;
@@ -198,9 +198,9 @@ export function instrumentPrismaDriverAdapter<T extends object>(
   // Boundary cast: the factory is duck-typed on purpose (no `@prisma/*`
   // import), and `bindAdapter`/`bindMigrationAwareSqlAdapterFactory` copy
   // methods by name, so a delegating plain object is a valid substitute.
-  const source = factory as unknown as DebugbarSqlAdapterFactoryLike;
+  const source = factory as unknown as UpspectorSqlAdapterFactoryLike;
 
-  const wrapped: DebugbarSqlAdapterFactoryLike = {
+  const wrapped: UpspectorSqlAdapterFactoryLike = {
     adapterName: source.adapterName,
     provider: source.provider,
     connect: async () => wrapAdapter(await source.connect(), options),

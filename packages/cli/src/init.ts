@@ -27,7 +27,7 @@ export const STEPS: readonly Step[] = [
   envStep,
 ];
 
-const PACKAGES = ["@uplide/debugbar", "@uplide/debugbar-next"];
+const PACKAGES = ["@uplide/upspector", "@uplide/upspector-next"];
 const DEFAULT_API_ENV = "NEXT_PUBLIC_API_BASE_URL";
 
 export interface InitOptions {
@@ -98,7 +98,7 @@ export async function init(options: InitOptions): Promise<InitResult> {
     throw new SetupError(`\`${apiEnv}\` is not a valid env variable name.`);
   }
   if (!apiEnv.startsWith("NEXT_PUBLIC_")) {
-    log(`! ${apiEnv} has no NEXT_PUBLIC_ prefix, so the browser half of the debugbar won't see it.`);
+    log(`! ${apiEnv} has no NEXT_PUBLIC_ prefix, so the browser half of Upspector won't see it.`);
   }
   const context: Context = { ...project, apiEnv };
 
@@ -141,11 +141,11 @@ export async function init(options: InitOptions): Promise<InitResult> {
 
   log(`
 Turn it on in .env.local:
-  NEXT_PUBLIC_DEBUGBAR=true
+  NEXT_PUBLIC_UPSPECTOR=true
   ${apiEnv}=<backend URL>
 
 A browser calling the backend cross-origin only sees the payload when its CORS
-config has exposedHeaders: ["x-debugbar"].`);
+config has exposedHeaders: ["x-upspector"].`);
 
   return { results, changes };
 }

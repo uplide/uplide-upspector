@@ -1,7 +1,7 @@
 {
-  "name": "@uplide/debugbar-nest",
+  "name": "@uplide/upspector-nest",
   "version": "0.1.0",
-  "description": "Per-request debugbar for NestJS: SQL, HTTP, cache, logs and timers in a `debugbar` response key.",
+  "description": "Per-request upspector for NestJS: SQL, HTTP, cache, logs and timers in an `upspector` response key.",
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -14,7 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@uplide/debugbar-protocol": "workspace:*"
+    "@uplide/upspector-protocol": "workspace:*"
   },
   "peerDependencies": {
     "@nestjs/common": ">=10",

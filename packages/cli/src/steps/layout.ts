@@ -10,12 +10,12 @@ import {
 } from "../source.js";
 import { applied, manual, skipped, type Step } from "../step.js";
 
-const SERVER = "@uplide/debugbar-next/server";
+const SERVER = "@uplide/upspector-next/server";
 
 const SCOPE = `// Before anything is awaited, so the page's own requests are inside the scope.
-openDebugbarScope({ profile: process.env.DEBUGBAR_RENDER_PROFILE === "true" });`;
+openUpspectorScope({ profile: process.env.UPSPECTOR_RENDER_PROFILE === "true" });`;
 
-const SNIPPET = `import { DebugbarRoot, openDebugbarScope } from "${SERVER}";
+const SNIPPET = `import { UpspectorRoot, openUpspectorScope } from "${SERVER}";
 import { Suspense } from "react";
 
 export default function RootLayout({ children }) {
@@ -26,7 +26,7 @@ export default function RootLayout({ children }) {
       <body>
         {children}
         <Suspense>
-          <DebugbarRoot />
+          <UpspectorRoot />
         </Suspense>
       </body>
     </html>
@@ -63,11 +63,11 @@ export const layoutStep: Step = {
     if (!path) return manual(`no root layout in ${appDir}`, SNIPPET);
 
     const text = files.read(path) ?? "";
-    if (text.includes("DebugbarRoot")) return skipped(`${path} already renders DebugbarRoot`);
+    if (text.includes("UpspectorRoot")) return skipped(`${path} already renders UpspectorRoot`);
 
     const file = parseSource(path, text);
     if (isClientComponent(file)) {
-      return manual(`${path} is a client component; DebugbarRoot needs a server layout`, SNIPPET);
+      return manual(`${path} is a client component; UpspectorRoot needs a server layout`, SNIPPET);
     }
 
     const layout = defaultExportedFunction(file);
@@ -88,19 +88,19 @@ export const layoutStep: Step = {
     const unit = indentUnitOf(text);
     const eol = eolOf(text);
     const insertion = /^[ \t]*$/.test(lineIndent)
-      ? `${unit}<Suspense>${eol}${lineIndent}${unit}${unit}<DebugbarRoot />${eol}${lineIndent}${unit}</Suspense>${eol}${lineIndent}`
-      : "<Suspense><DebugbarRoot /></Suspense>";
+      ? `${unit}<Suspense>${eol}${lineIndent}${unit}${unit}<UpspectorRoot />${eol}${lineIndent}${unit}</Suspense>${eol}${lineIndent}`
+      : "<Suspense><UpspectorRoot /></Suspense>";
 
     // The edits below all land before `</body>`, so its offset from the end of
     // the file holds; the JSX is spliced in as text once they are done.
     const fromEnd = text.length - closingStart;
     body.insertStatements(0, `${quoted(file, SCOPE)}\n`);
-    ensureNamedImports(file, SERVER, ["DebugbarRoot", "openDebugbarScope"]);
+    ensureNamedImports(file, SERVER, ["UpspectorRoot", "openUpspectorScope"]);
     ensureNamedImports(file, "react", ["Suspense"]);
 
     const updated = file.getFullText();
     const at = updated.length - fromEnd;
     files.write(path, updated.slice(0, at) + insertion + updated.slice(at));
-    return applied(`rendered DebugbarRoot in ${path}`);
+    return applied(`rendered UpspectorRoot in ${path}`);
   },
 };

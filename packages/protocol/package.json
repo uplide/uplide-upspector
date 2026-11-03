@@ -1,7 +1,7 @@
 {
-  "name": "@uplide/debugbar-protocol",
+  "name": "@uplide/upspector-protocol",
   "version": "0.1.0",
-  "description": "Wire contract shared by the debugbar backend and frontend packages.",
+  "description": "Wire contract shared by the Upspector backend and frontend packages.",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/cjs/index.js",

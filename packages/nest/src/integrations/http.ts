@@ -1,14 +1,14 @@
-import type { DebugbarCollector } from '../collector';
-import { getDebugbarCollector } from '../context';
+import type { UpspectorCollector } from '../collector';
+import { getUpspectorCollector } from '../context';
 
 interface HttpCallState {
   startHr: number;
-  collector: DebugbarCollector;
+  collector: UpspectorCollector;
 }
 
 /** Symbol-keyed so an instrumented config/instance never gains a JSON key. */
-const CALL_STATE = Symbol('debugbar.http.callState');
-const INSTRUMENTED = Symbol('debugbar.http.instrumented');
+const CALL_STATE = Symbol('upspector.http.callState');
+const INSTRUMENTED = Symbol('upspector.http.instrumented');
 
 interface AxiosConfigLike {
   method?: string;
@@ -92,7 +92,7 @@ function instrumentAxiosInstance<T extends AxiosInstanceLike>(instance: T): T {
   instance[INSTRUMENTED] = true;
 
   instance.interceptors.request.use((config) => {
-    const collector = getDebugbarCollector();
+    const collector = getUpspectorCollector();
     if (collector) {
       config[CALL_STATE] = { startHr: performance.now(), collector };
     }
@@ -164,7 +164,7 @@ export function installFetchInstrumentation(target?: {
   const originalFetch = holder.fetch.bind(holder);
 
   holder.fetch = async (input, init) => {
-    const collector = getDebugbarCollector();
+    const collector = getUpspectorCollector();
     if (!collector) {
       return originalFetch(input, init);
     }

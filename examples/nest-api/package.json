@@ -14,7 +14,7 @@
     "@nestjs/platform-express": "^11.1.6",
     "@prisma/adapter-better-sqlite3": "^7.10.0",
     "@prisma/client": "^7.10.0",
-    "@uplide/debugbar-nest": "workspace:*",
+    "@uplide/upspector-nest": "workspace:*",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },

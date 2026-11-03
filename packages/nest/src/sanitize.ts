@@ -87,7 +87,7 @@ export function sanitizeParams(
 /** `at fn (/abs/file.ts:12:34)` and bare `at /abs/file.ts:12:34`. */
 const STACK_FRAME = /\(?([^()\s]+):(\d+):(\d+)\)?$/;
 
-/** Frames inside the debugbar package itself, resolved once at load time. */
+/** Frames inside the Upspector package itself, resolved once at load time. */
 const PACKAGE_ROOT = path.dirname(__dirname);
 
 /**

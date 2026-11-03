@@ -1,13 +1,13 @@
 import { json } from "./guard.js";
 import {
   createInspectHandler,
-  type DebugbarInspectHandlerOptions,
+  type UpspectorInspectHandlerOptions,
 } from "./inspect.js";
 import { createEventsHandler, createMcpHandler } from "./mcp.js";
 
-export type DebugbarHandlerOptions = DebugbarInspectHandlerOptions;
+export type UpspectorHandlerOptions = UpspectorInspectHandlerOptions;
 
-export interface DebugbarRouteContext {
+export interface UpspectorRouteContext {
   params: Promise<{ endpoint: string }>;
 }
 
@@ -15,8 +15,8 @@ type Method = "GET" | "POST" | "DELETE";
 type Handler = (request: Request) => Promise<Response> | Response;
 
 /**
- * One route handler for every debugbar endpoint, mounted as
- * `app/api/debugbar/[endpoint]/route.ts`:
+ * One route handler for every upspector endpoint, mounted as
+ * `app/api/upspector/[endpoint]/route.ts`:
  * - `inspect` — the element picker (`createInspectHandler`);
  * - `events` — entries the browser forwards (`createEventsHandler`);
  * - `mcp` — the MCP server over those entries (`createMcpHandler`).
@@ -24,7 +24,7 @@ type Handler = (request: Request) => Promise<Response> | Response;
  * `allowedHosts` applies to all three; the remaining options go to the
  * inspector. Development only, like each handler on its own.
  */
-export function createDebugbarHandler(options: DebugbarHandlerOptions = {}) {
+export function createUpspectorHandler(options: UpspectorHandlerOptions = {}) {
   const { allowedHosts } = options;
   const endpoints: Record<string, Partial<Record<Method, Handler>>> = {
     inspect: createInspectHandler(options),
@@ -35,7 +35,7 @@ export function createDebugbarHandler(options: DebugbarHandlerOptions = {}) {
   function route(method: Method) {
     return async (
       request: Request,
-      { params }: DebugbarRouteContext,
+      { params }: UpspectorRouteContext,
     ): Promise<Response> => {
       if (process.env.NODE_ENV !== "development") {
         return new Response(null, { status: 404 });

@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DEBUGBAR_PAYLOAD_VERSION,
-  type DebugbarPayload,
-  isDebugbarErrorPayload,
-  isDebugbarPayload,
-  takeDebugbarPayload,
+  UPSPECTOR_PAYLOAD_VERSION,
+  type UpspectorPayload,
+  isUpspectorErrorPayload,
+  isUpspectorPayload,
+  takeUpspectorPayload,
 } from '../src/index.js';
 
-const payload: DebugbarPayload = {
-  version: DEBUGBAR_PAYLOAD_VERSION,
+const payload: UpspectorPayload = {
+  version: UPSPECTOR_PAYLOAD_VERSION,
   requestId: 'req-1',
   startedAt: '2026-11-02T00:00:00.000Z',
   durationMs: 12,
@@ -23,45 +23,45 @@ const payload: DebugbarPayload = {
 
 describe('guards', () => {
   it('accepts a v1 payload and rejects a partial one', () => {
-    expect(isDebugbarPayload(payload)).toBe(true);
-    expect(isDebugbarPayload({ ...payload, database: undefined })).toBe(false);
-    expect(isDebugbarPayload([payload])).toBe(false);
+    expect(isUpspectorPayload(payload)).toBe(true);
+    expect(isUpspectorPayload({ ...payload, database: undefined })).toBe(false);
+    expect(isUpspectorPayload([payload])).toBe(false);
   });
 
   it('recognises the snapshot-failure payload', () => {
-    expect(isDebugbarErrorPayload({ version: 1, error: 'boom' })).toBe(true);
-    expect(isDebugbarErrorPayload(payload)).toBe(false);
+    expect(isUpspectorErrorPayload({ version: 1, error: 'boom' })).toBe(true);
+    expect(isUpspectorErrorPayload(payload)).toBe(false);
   });
 });
 
-describe('takeDebugbarPayload', () => {
+describe('takeUpspectorPayload', () => {
   it('returns the payload and removes the key', () => {
-    const body: Record<string, unknown> = { data: 1, debugbar: payload };
+    const body: Record<string, unknown> = { data: 1, upspector: payload };
 
-    expect(takeDebugbarPayload(body)).toEqual({ payload });
+    expect(takeUpspectorPayload(body)).toEqual({ payload });
     expect(body).toEqual({ data: 1 });
   });
 
   it('returns the error payload instead of dropping it', () => {
-    const error = { version: 1, error: 'debugbar snapshot failed: x' };
-    const body: Record<string, unknown> = { debugbar: error };
+    const error = { version: 1, error: 'upspector snapshot failed: x' };
+    const body: Record<string, unknown> = { upspector: error };
 
-    expect(takeDebugbarPayload(body)).toEqual({ error });
-    expect('debugbar' in body).toBe(false);
+    expect(takeUpspectorPayload(body)).toEqual({ error });
+    expect('upspector' in body).toBe(false);
   });
 
   it('honours a custom key and ignores bodies without it', () => {
     const body: Record<string, unknown> = { _dbg: payload };
 
-    expect(takeDebugbarPayload(body, '_dbg')).toEqual({ payload });
-    expect(takeDebugbarPayload({ data: 1 })).toBeUndefined();
-    expect(takeDebugbarPayload('text')).toBeUndefined();
+    expect(takeUpspectorPayload(body, '_dbg')).toEqual({ payload });
+    expect(takeUpspectorPayload({ data: 1 })).toBeUndefined();
+    expect(takeUpspectorPayload('text')).toBeUndefined();
   });
 
   it('removes an unrecognised value without returning it', () => {
-    const body: Record<string, unknown> = { debugbar: { version: 1 } };
+    const body: Record<string, unknown> = { upspector: { version: 1 } };
 
-    expect(takeDebugbarPayload(body)).toBeUndefined();
-    expect('debugbar' in body).toBe(false);
+    expect(takeUpspectorPayload(body)).toBeUndefined();
+    expect('upspector' in body).toBe(false);
   });
 });

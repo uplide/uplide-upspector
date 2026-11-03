@@ -1,4 +1,4 @@
-import type { DebugbarEntry, DebugbarRenderPass } from "@uplide/debugbar";
+import type { UpspectorEntry, UpspectorRenderPass } from "@uplide/upspector";
 
 /**
  * Bigger than the overlay's 50: an agent walks many pages before it asks, and
@@ -8,28 +8,28 @@ const MAX_ENTRIES = 500;
 const MAX_RENDER_PASSES = 100;
 
 /** Where a forwarded record was seen: the tab and the page it was on. */
-export interface DebugbarPageContext {
+export interface UpspectorPageContext {
   tabId: string;
   pageUrl: string;
 }
 
-export interface DebugbarBufferedEntry extends DebugbarPageContext {
+export interface UpspectorBufferedEntry extends UpspectorPageContext {
   /** Monotonic across entries and render passes; the agent's cursor. */
   seq: number;
   receivedAt: string;
-  entry: DebugbarEntry;
+  entry: UpspectorEntry;
 }
 
-export interface DebugbarBufferedRenderPass extends DebugbarPageContext {
+export interface UpspectorBufferedRenderPass extends UpspectorPageContext {
   seq: number;
   receivedAt: string;
-  renderPass: DebugbarRenderPass;
+  renderPass: UpspectorRenderPass;
 }
 
-export interface DebugbarAgentBuffer {
+export interface UpspectorAgentBuffer {
   seq: number;
-  entries: DebugbarBufferedEntry[];
-  renderPasses: DebugbarBufferedRenderPass[];
+  entries: UpspectorBufferedEntry[];
+  renderPasses: UpspectorBufferedRenderPass[];
 }
 
 /**
@@ -37,11 +37,11 @@ export interface DebugbarAgentBuffer {
  * bundles in `next dev`, and a recompile re-evaluates both modules. Only the
  * process outlives them.
  */
-const BUFFER = Symbol.for("@uplide/debugbar-next/agent-buffer");
+const BUFFER = Symbol.for("@uplide/upspector-next/agent-buffer");
 
-type BufferHolder = { [BUFFER]?: DebugbarAgentBuffer };
+type BufferHolder = { [BUFFER]?: UpspectorAgentBuffer };
 
-export function getAgentBuffer(): DebugbarAgentBuffer {
+export function getAgentBuffer(): UpspectorAgentBuffer {
   return ((globalThis as BufferHolder)[BUFFER] ??= {
     seq: 0,
     entries: [],
@@ -55,8 +55,8 @@ export function getAgentBuffer(): DebugbarAgentBuffer {
  * is stored once per tab.
  */
 export function pushAgentEntry(
-  context: DebugbarPageContext,
-  entry: DebugbarEntry,
+  context: UpspectorPageContext,
+  entry: UpspectorEntry,
 ): void {
   const buffer = getAgentBuffer();
   const duplicate = buffer.entries.some(
@@ -77,8 +77,8 @@ export function pushAgentEntry(
 }
 
 export function pushAgentRenderPass(
-  context: DebugbarPageContext,
-  renderPass: DebugbarRenderPass,
+  context: UpspectorPageContext,
+  renderPass: UpspectorRenderPass,
 ): void {
   const buffer = getAgentBuffer();
   const duplicate = buffer.renderPasses.some(

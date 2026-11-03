@@ -38,8 +38,8 @@ the browser never sent, so they are not trusted to a name pattern.
 
 ## Configuring
 
-```ts title="debugbar.config.ts"
-defineNextDebugbarConfig({
+```ts title="upspector.config.ts"
+defineNextUpspectorConfig({
   // …
   redactKeys: ['x-tenant', /ssn$/i], // always mask: headers, query, bodies
   revealKeys: ['sortKey'], // never mask by name (credential-shaped values still are)

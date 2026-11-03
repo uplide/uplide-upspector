@@ -1,12 +1,12 @@
 "use client";
 
-import { attachDebugbar } from "@uplide/debugbar/axios";
+import { attachUpspector } from "@uplide/upspector/axios";
 import axios from "axios";
 import { useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
 
 const api = axios.create({ baseURL: API_BASE_URL });
-attachDebugbar(api);
+attachUpspector(api);
 
 /** Browser-side requests: `fetch` is captured by the client instrumentation, axios by its interceptor. */
 export function ClientPanel() {
@@ -45,12 +45,12 @@ export function ClientPanel() {
       <button
         onClick={() =>
           run("opt-out", async () =>
-            (await fetch(`${API_BASE_URL}/api/products/2`, { debugbar: false })).json(),
+            (await fetch(`${API_BASE_URL}/api/products/2`, { upspector: false })).json(),
           )
         }
         type="button"
       >
-        fetch with debugbar: false
+        fetch with upspector: false
       </button>
       <p style={{ width: "100%", fontFamily: "monospace", fontSize: 12 }}>{result}</p>
     </section>

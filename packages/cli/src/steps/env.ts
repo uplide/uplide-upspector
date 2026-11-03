@@ -2,7 +2,7 @@ import { eolOf } from "../source.js";
 import { applied, skipped, type Step } from "../step.js";
 
 const EXAMPLE = ".env.example";
-const VARIABLE = "NEXT_PUBLIC_DEBUGBAR";
+const VARIABLE = "NEXT_PUBLIC_UPSPECTOR";
 
 /** Documents the switch in the committed env template. */
 export const envStep: Step = {

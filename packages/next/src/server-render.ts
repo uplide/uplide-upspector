@@ -4,11 +4,11 @@ import type { GCProfiler } from "node:v8";
 import { cache } from "react";
 import { aggregateSamplingProfile } from "./render-profile.js";
 import type {
-  DebugbarRenderAllocations,
-  DebugbarRenderComponent,
-  DebugbarRenderGc,
-  DebugbarRenderPass,
-} from "@uplide/debugbar";
+  UpspectorRenderAllocations,
+  UpspectorRenderComponent,
+  UpspectorRenderGc,
+  UpspectorRenderPass,
+} from "@uplide/upspector";
 
 /**
  * Server-side measurement of one RSC render pass: wall time, heap/RSS deltas,
@@ -28,11 +28,11 @@ interface RenderPassStore {
   rssStart: number;
   externalStart: number;
   heapPeak: number;
-  components: DebugbarRenderComponent[];
+  components: UpspectorRenderComponent[];
   holdsProfiler: boolean;
   profiling: boolean;
   skipped: string | undefined;
-  snapshot: DebugbarRenderPass | null;
+  snapshot: UpspectorRenderPass | null;
 }
 
 const getRenderPassStore = cache<() => RenderPassStore>(() => ({
@@ -87,7 +87,7 @@ function round2(value: number): number {
  * `record.cost` is in **microseconds** despite the field's docs — measured:
  * 28 GCs summed to 242 327 over a 515 ms allocation loop.
  */
-function collectGc(): DebugbarRenderGc | null {
+function collectGc(): UpspectorRenderGc | null {
   const profiler = gcProfiler;
   gcProfiler = null;
   if (!profiler) return null;
@@ -120,7 +120,7 @@ function collectGc(): DebugbarRenderGc | null {
  * Stops sampling and disconnects. Never rejects: instrumentation must not be
  * able to fail a page render.
  */
-async function releaseSampling(): Promise<DebugbarRenderAllocations | null> {
+async function releaseSampling(): Promise<UpspectorRenderAllocations | null> {
   const session = inspectorSession;
   inspectorSession = null;
   if (!session) return null;
@@ -156,7 +156,7 @@ function abandonProfilers(): void {
  * components run unmeasured.
  *
  * `process.getBuiltinModule` instead of `import`: `node:v8` and
- * `node:inspector` are only ever loaded when the debugbar is actually on.
+ * `node:inspector` are only ever loaded when Upspector is actually on.
  */
 export function beginRenderPass(options: { profile: boolean }): void {
   const store = getRenderPassStore();
@@ -230,7 +230,7 @@ export function beginRenderPass(options: { profile: boolean }): void {
 /**
  * Wraps an async server component so its render window shows up in the render
  * tab. A pass-through no-op when no render pass started, which is every request
- * with the debugbar off.
+ * with Upspector off.
  */
 export function measureServerComponent<A extends unknown[], R>(
   name: string,
@@ -270,7 +270,7 @@ export function measureServerComponent<A extends unknown[], R>(
  * Closes the pass and returns what was measured. Idempotent: the second call
  * returns the same snapshot without touching the profilers.
  */
-export async function snapshotRenderPass(): Promise<DebugbarRenderPass | null> {
+export async function snapshotRenderPass(): Promise<UpspectorRenderPass | null> {
   const store = getRenderPassStore();
   if (!store.started) return null;
   if (store.snapshot) return store.snapshot;
@@ -279,8 +279,8 @@ export async function snapshotRenderPass(): Promise<DebugbarRenderPass | null> {
   const memory = process.memoryUsage();
   const heapPeak = Math.max(store.heapPeak, memory.heapUsed);
 
-  let gc: DebugbarRenderGc | null = null;
-  let allocations: DebugbarRenderAllocations | null = null;
+  let gc: UpspectorRenderGc | null = null;
+  let allocations: UpspectorRenderAllocations | null = null;
 
   if (store.holdsProfiler) {
     gc = collectGc();

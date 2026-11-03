@@ -1,15 +1,15 @@
 /**
- * The wire format lives in `@uplide/debugbar-protocol` so the backend and the
+ * The wire format lives in `@uplide/upspector-protocol` so the backend and the
  * clients that read it compile against one definition.
  */
-export * from '@uplide/debugbar-protocol';
+export * from '@uplide/upspector-protocol';
 
 /**
  * Minimal structural view of an Express-family request. Declared locally so
  * the package never depends on `@types/express`; `express.Request` and
  * `http.IncomingMessage` are both assignable to it.
  */
-export interface DebugbarRequestLike {
+export interface UpspectorRequestLike {
   method?: string;
   url?: string;
   originalUrl?: string;
@@ -21,16 +21,16 @@ export interface DebugbarRequestLike {
  * injection point for the payload (both the success envelope and the error
  * envelope funnel through it); `setHeader` flags the response for clients.
  */
-export interface DebugbarResponseLike {
+export interface UpspectorResponseLike {
   statusCode?: number;
   json(body: unknown): unknown;
   setHeader(name: string, value: string): unknown;
 }
 
-export interface DebugbarOptions {
+export interface UpspectorOptions {
   /** Master switch. When false every integration is an identity/no-op. */
   enabled: boolean;
-  /** Top-level response key. Default `'debugbar'`. */
+  /** Top-level response key. Default `'upspector'`. */
   responseKey?: string;
   /** Default 100. */
   maxSpans?: number;
@@ -55,10 +55,10 @@ export interface DebugbarOptions {
   /** Default `process.cwd()`. Call sites are reported relative to it. */
   callSiteRoot?: string;
   /** Return true to leave a request completely uninstrumented. */
-  skip?: (req: DebugbarRequestLike) => boolean;
+  skip?: (req: UpspectorRequestLike) => boolean;
 }
 
-export type ResolvedDebugbarOptions = Required<
-  Omit<DebugbarOptions, 'sanitizeParams'>
+export type ResolvedUpspectorOptions = Required<
+  Omit<UpspectorOptions, 'sanitizeParams'>
 > &
-  Pick<DebugbarOptions, 'sanitizeParams'>;
+  Pick<UpspectorOptions, 'sanitizeParams'>;

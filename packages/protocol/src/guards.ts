@@ -1,7 +1,7 @@
 import {
   DEFAULT_RESPONSE_KEY,
-  type DebugbarErrorPayload,
-  type DebugbarPayload,
+  type UpspectorErrorPayload,
+  type UpspectorPayload,
 } from './types.js';
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -13,7 +13,7 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
  * payload comes from the host's own backend, so this only has to catch a
  * version skew or a truncated body, not hostile input.
  */
-export function isDebugbarPayload(value: unknown): value is DebugbarPayload {
+export function isUpspectorPayload(value: unknown): value is UpspectorPayload {
   if (!isRecord(value)) return false;
   if (typeof value.version !== 'number') return false;
   if (typeof value.requestId !== 'string') return false;
@@ -29,9 +29,9 @@ export function isDebugbarPayload(value: unknown): value is DebugbarPayload {
   );
 }
 
-export function isDebugbarErrorPayload(
+export function isUpspectorErrorPayload(
   value: unknown,
-): value is DebugbarErrorPayload {
+): value is UpspectorErrorPayload {
   return (
     isRecord(value) &&
     typeof value.version === 'number' &&
@@ -39,9 +39,9 @@ export function isDebugbarErrorPayload(
   );
 }
 
-export type DebugbarTakeResult =
-  | { payload: DebugbarPayload }
-  | { error: DebugbarErrorPayload };
+export type UpspectorTakeResult =
+  | { payload: UpspectorPayload }
+  | { error: UpspectorErrorPayload };
 
 /**
  * Pulls the payload key out of a response envelope.
@@ -50,17 +50,17 @@ export type DebugbarTakeResult =
  * production envelope shape. A snapshot-failure payload is returned as
  * `{ error }` rather than dropped; anything else under the key is discarded.
  */
-export function takeDebugbarPayload(
+export function takeUpspectorPayload(
   body: unknown,
   key: string = DEFAULT_RESPONSE_KEY,
-): DebugbarTakeResult | undefined {
+): UpspectorTakeResult | undefined {
   if (!isRecord(body) || !(key in body)) return undefined;
 
   const value = body[key];
   delete body[key];
 
-  if (isDebugbarPayload(value)) return { payload: value };
-  if (isDebugbarErrorPayload(value)) return { error: value };
+  if (isUpspectorPayload(value)) return { payload: value };
+  if (isUpspectorErrorPayload(value)) return { error: value };
 
   return undefined;
 }

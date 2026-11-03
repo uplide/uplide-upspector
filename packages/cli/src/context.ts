@@ -76,7 +76,7 @@ export function detectProject(files: Workspace): Project {
 
   const version = minorOf(next);
   if (version && (version[0] < 15 || (version[0] === 15 && version[1] < 3))) {
-    throw new SetupError(`The debugbar needs Next.js 15.3 or newer (found ${next}).`);
+    throw new SetupError(`Upspector needs Next.js 15.3 or newer (found ${next}).`);
   }
 
   const srcDir = files.find(["app/layout.tsx", "app/layout.jsx", "app/layout.js"])
@@ -97,8 +97,8 @@ export function detectProject(files: Workspace): Project {
   };
 }
 
-/** The import specifier for `debugbar.config` as seen from `fromFile`. */
+/** The import specifier for `upspector.config` as seen from `fromFile`. */
 export function configImportFrom(fromFile: string): string {
-  const relative = posix.relative(posix.dirname(fromFile), "debugbar.config");
+  const relative = posix.relative(posix.dirname(fromFile), "upspector.config");
   return relative.startsWith(".") ? relative : `./${relative}`;
 }

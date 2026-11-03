@@ -1,7 +1,7 @@
 import type {
-  DebugbarAllocationSite,
-  DebugbarRenderAllocations,
-} from "@uplide/debugbar";
+  UpspectorAllocationSite,
+  UpspectorRenderAllocations,
+} from "@uplide/upspector";
 
 /**
  * Shape of `HeapProfiler.stopSampling`'s `profile.head` (CDP
@@ -17,7 +17,7 @@ export interface SamplingProfileNode {
 /** Rows kept in the overlay's allocation table; the rest is summarized away. */
 export const MAX_ALLOCATION_SITES = 20;
 
-function classify(url: string): DebugbarAllocationSite["source"] {
+function classify(url: string): UpspectorAllocationSite["source"] {
   if (url === "" || url.startsWith("node:")) return "runtime";
   if (url.includes("node_modules")) return "dependency";
 
@@ -33,8 +33,8 @@ function classify(url: string): DebugbarAllocationSite["source"] {
  */
 export function aggregateSamplingProfile(
   head: SamplingProfileNode,
-): DebugbarRenderAllocations {
-  const groups = new Map<string, DebugbarAllocationSite>();
+): UpspectorRenderAllocations {
+  const groups = new Map<string, UpspectorAllocationSite>();
   const stack: SamplingProfileNode[] = [head];
   let sampledBytes = 0;
 

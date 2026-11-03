@@ -8,20 +8,20 @@ import { nextConfigStep } from "../src/steps/next-config.js";
 import { LAYOUT, NEXT_CONFIG, runStep } from "./helpers.js";
 
 describe("config", () => {
-  it("creates debugbar.config with the chosen env variable", () => {
+  it("creates upspector.config with the chosen env variable", () => {
     const { written } = runStep(configStep);
 
-    expect(written["debugbar.config.ts"]).toBe(`import { defineNextDebugbarConfig } from "@uplide/debugbar-next";
+    expect(written["upspector.config.ts"]).toBe(`import { defineNextUpspectorConfig } from "@uplide/upspector-next";
 
-export default defineNextDebugbarConfig({
-  enabled: process.env.NEXT_PUBLIC_DEBUGBAR === "true",
+export default defineNextUpspectorConfig({
+  enabled: process.env.NEXT_PUBLIC_UPSPECTOR === "true",
   backend: { origins: [process.env.NEXT_PUBLIC_API_BASE_URL] },
 });
 `);
   });
 
-  it("keeps an existing config in any extension withDebugbar reads", () => {
-    const { result, written } = runStep(configStep, { "debugbar.config.mjs": "export default {};\n" });
+  it("keeps an existing config in any extension withUpspector reads", () => {
+    const { result, written } = runStep(configStep, { "upspector.config.mjs": "export default {};\n" });
 
     expect(result.status).toBe("skipped");
     expect(written).toEqual({});
@@ -33,13 +33,13 @@ describe("next-config", () => {
     const { written } = runStep(nextConfigStep, { "next.config.ts": NEXT_CONFIG });
 
     expect(written["next.config.ts"]).toBe(`import type { NextConfig } from "next";
-import { withDebugbar } from "@uplide/debugbar-next/config";
+import { withUpspector } from "@uplide/upspector-next/config";
 
 const nextConfig: NextConfig = {
   /* config options here */
 };
 
-export default withDebugbar(nextConfig);
+export default withUpspector(nextConfig);
 `);
   });
 
@@ -54,11 +54,11 @@ export default withNextIntl({ reactStrictMode: true });
     });
 
     expect(written["next.config.mjs"]).toBe(`import createNextIntlPlugin from 'next-intl/plugin';
-import { withDebugbar } from '@uplide/debugbar-next/config';
+import { withUpspector } from '@uplide/upspector-next/config';
 
 const withNextIntl = createNextIntlPlugin();
 
-export default withDebugbar(withNextIntl({ reactStrictMode: true }));
+export default withUpspector(withNextIntl({ reactStrictMode: true }));
 `);
   });
 
@@ -79,7 +79,7 @@ export default withDebugbar(withNextIntl({ reactStrictMode: true }));
 
   it("is idempotent", () => {
     const { result } = runStep(nextConfigStep, {
-      "next.config.ts": `import { withDebugbar } from "@uplide/debugbar-next/config";\n\nexport default withDebugbar({});\n`,
+      "next.config.ts": `import { withUpspector } from "@uplide/upspector-next/config";\n\nexport default withUpspector({});\n`,
     });
 
     expect(result.status).toBe("skipped");
@@ -92,10 +92,10 @@ describe("instrumentation", () => {
 
     expect(written["instrumentation.ts"]).toBe(`export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { registerDebugbar } = await import("@uplide/debugbar-next/server");
-    const { default: debugbar } = await import("./debugbar.config");
+    const { registerUpspector } = await import("@uplide/upspector-next/server");
+    const { default: upspector } = await import("./upspector.config");
 
-    registerDebugbar(debugbar);
+    registerUpspector(upspector);
   }
 }
 `);
@@ -119,10 +119,10 @@ export const onRequestError = Sentry.captureRequestError;
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { registerDebugbar } = await import("@uplide/debugbar-next/server");
-    const { default: debugbar } = await import("./debugbar.config");
+    const { registerUpspector } = await import("@uplide/upspector-next/server");
+    const { default: upspector } = await import("./upspector.config");
 
-    registerDebugbar(debugbar);
+    registerUpspector(upspector);
   }
 
   if (process.env.NEXT_RUNTIME === "edge") {
@@ -143,10 +143,10 @@ export const onRequestError = Sentry.captureRequestError;
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { registerDebugbar } = await import("@uplide/debugbar-next/server");
-    const { default: debugbar } = await import("./debugbar.config");
+    const { registerUpspector } = await import("@uplide/upspector-next/server");
+    const { default: upspector } = await import("./upspector.config");
 
-    registerDebugbar(debugbar);
+    registerUpspector(upspector);
   }
 }
 `);
@@ -155,7 +155,7 @@ export async function register() {
   it("goes in src/ and imports the root config from there", () => {
     const { written } = runStep(instrumentationStep, { "src/app/layout.tsx": "" });
 
-    expect(written["src/instrumentation.ts"]).toContain('await import("../debugbar.config")');
+    expect(written["src/instrumentation.ts"]).toContain('await import("../upspector.config")');
   });
 });
 
@@ -163,10 +163,10 @@ describe("instrumentation-client", () => {
   it("creates the file", () => {
     const { written } = runStep(instrumentationClientStep);
 
-    expect(written["instrumentation-client.ts"]).toBe(`import { installDebugbarClient } from "@uplide/debugbar-next/client";
-import debugbar from "./debugbar.config";
+    expect(written["instrumentation-client.ts"]).toBe(`import { installUpspectorClient } from "@uplide/upspector-next/client";
+import upspector from "./upspector.config";
 
-installDebugbarClient(debugbar);
+installUpspectorClient(upspector);
 `);
   });
 
@@ -182,10 +182,10 @@ export function onRouterTransitionStart() {}
     });
 
     expect(written["src/instrumentation-client.ts"]).toBe(`import posthog from "posthog-js";
-import { installDebugbarClient } from "@uplide/debugbar-next/client";
-import debugbar from "../debugbar.config";
+import { installUpspectorClient } from "@uplide/upspector-next/client";
+import upspector from "../upspector.config";
 
-installDebugbarClient(debugbar);
+installUpspectorClient(upspector);
 
 posthog.init("key");
 
@@ -195,13 +195,13 @@ export function onRouterTransitionStart() {}
 });
 
 describe("layout", () => {
-  it("opens the scope and renders DebugbarRoot in the create-next-app layout", () => {
+  it("opens the scope and renders UpspectorRoot in the create-next-app layout", () => {
     const { written } = runStep(layoutStep);
 
     expect(written["app/layout.tsx"]).toBe(`import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
-import { DebugbarRoot, openDebugbarScope } from "@uplide/debugbar-next/server";
+import { UpspectorRoot, openUpspectorScope } from "@uplide/upspector-next/server";
 import { Suspense } from "react";
 
 const geistSans = Geist({
@@ -220,14 +220,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   // Before anything is awaited, so the page's own requests are inside the scope.
-  openDebugbarScope({ profile: process.env.DEBUGBAR_RENDER_PROFILE === "true" });
+  openUpspectorScope({ profile: process.env.UPSPECTOR_RENDER_PROFILE === "true" });
 
   return (
     <html lang="en">
       <body className={\`\${geistSans.variable} antialiased\`}>
         {children}
         <Suspense>
-          <DebugbarRoot />
+          <UpspectorRoot />
         </Suspense>
       </body>
     </html>
@@ -252,14 +252,14 @@ export default RootLayout;
 
     expect(written["app/layout.tsx"]).toBe(`import type { ReactNode } from "react";
 import { StrictMode, Suspense } from "react";
-import { DebugbarRoot, openDebugbarScope } from "@uplide/debugbar-next/server";
+import { UpspectorRoot, openUpspectorScope } from "@uplide/upspector-next/server";
 
 const RootLayout = async ({ children }: { children: ReactNode }) => {
   // Before anything is awaited, so the page's own requests are inside the scope.
-  openDebugbarScope({ profile: process.env.DEBUGBAR_RENDER_PROFILE === "true" });
+  openUpspectorScope({ profile: process.env.UPSPECTOR_RENDER_PROFILE === "true" });
 
   const locale = await getLocale();
-  return <html lang={locale}><body>{children}<Suspense><DebugbarRoot /></Suspense></body></html>;
+  return <html lang={locale}><body>{children}<Suspense><UpspectorRoot /></Suspense></body></html>;
 };
 
 export default RootLayout;
@@ -289,9 +289,9 @@ export default RootLayout;
     });
 
     expect(written["app/layout.tsx"]).toContain(
-      `                <Suspense>\n                    <DebugbarRoot />\n                </Suspense>\n            </body>`,
+      `                <Suspense>\n                    <UpspectorRoot />\n                </Suspense>\n            </body>`,
     );
-    expect(written["app/layout.tsx"]).toContain(`\n    openDebugbarScope(`);
+    expect(written["app/layout.tsx"]).toContain(`\n    openUpspectorScope(`);
   });
 
   it("keeps CRLF line endings", () => {
@@ -331,7 +331,7 @@ describe("route", () => {
   it("creates the route under the app directory", () => {
     const { written } = runStep(routeStep, { "src/app/layout.tsx": "" });
 
-    expect(Object.keys(written)).toEqual(["src/app/api/debugbar/[endpoint]/route.ts"]);
+    expect(Object.keys(written)).toEqual(["src/app/api/upspector/[endpoint]/route.ts"]);
   });
 });
 
@@ -339,7 +339,7 @@ describe("env", () => {
   it("adds the switch to .env.example", () => {
     const { written } = runStep(envStep, { ".env.example": "NEXT_PUBLIC_API_BASE_URL=" });
 
-    expect(written[".env.example"]).toBe("NEXT_PUBLIC_API_BASE_URL=\nNEXT_PUBLIC_DEBUGBAR=false\n");
+    expect(written[".env.example"]).toBe("NEXT_PUBLIC_API_BASE_URL=\nNEXT_PUBLIC_UPSPECTOR=false\n");
   });
 
   it("does nothing without .env.example", () => {

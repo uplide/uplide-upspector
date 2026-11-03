@@ -1,5 +1,5 @@
 {
-  "name": "uplide-debugbar",
+  "name": "uplide-upspector",
   "private": true,
   "packageManager": "pnpm@11.0.8",
   "engines": {
@@ -11,8 +11,8 @@
     "test": "pnpm -r --filter \"./packages/**\" test",
     "example:api": "pnpm --filter example-nest-api dev",
     "example:web": "pnpm --filter example-next-app dev",
-    "docs:dev": "pnpm --filter debugbar-docs dev",
-    "docs:build": "pnpm --filter debugbar-docs build"
+    "docs:dev": "pnpm --filter upspector-docs dev",
+    "docs:build": "pnpm --filter upspector-docs build"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

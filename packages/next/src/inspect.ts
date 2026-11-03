@@ -1,7 +1,7 @@
 import { relative, sep } from "node:path";
 import { json, refuseRequest } from "./guard.js";
 import {
-  type DebugbarInspectOptions,
+  type UpspectorInspectOptions,
   findRepoRoot,
   resolveInspectFrames,
 } from "./server-inspect.js";
@@ -12,13 +12,13 @@ export {
   SNIPPET_RADIUS,
 } from "./server-inspect.js";
 export type {
-  DebugbarCallResolver,
-  DebugbarInspectOptions,
-  DebugbarPathAliases,
-  DebugbarResolverContext,
+  UpspectorCallResolver,
+  UpspectorInspectOptions,
+  UpspectorPathAliases,
+  UpspectorResolverContext,
 } from "./server-inspect.js";
 
-export interface DebugbarInspectHandlerOptions extends DebugbarInspectOptions {
+export interface UpspectorInspectHandlerOptions extends UpspectorInspectOptions {
   /**
    * Hostnames besides loopback the dev server may be reached by, e.g. a LAN
    * IP when the app is opened from a phone. Each one widens who can read the
@@ -38,7 +38,7 @@ export interface DebugbarInspectHandlerOptions extends DebugbarInspectOptions {
 export function createInspectHandler({
   allowedHosts = [],
   ...options
-}: DebugbarInspectHandlerOptions = {}) {
+}: UpspectorInspectHandlerOptions = {}) {
   async function POST(request: Request): Promise<Response> {
     if (process.env.NODE_ENV !== "development") {
       return new Response(null, { status: 404 });
