@@ -357,9 +357,12 @@ function Mark() {
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <circle cx="8.8" cy="8.8" r="4.6" strokeWidth="2" />
-        <path d="M12.3 12.3l3.4 3.4" strokeWidth="2.4" />
-        <path d="M5.9 9h1.4l.9-1.8 1.3 3.4.9-1.6h1.2" strokeWidth="1.2" />
+        <path
+          d="M4 7.5V5a1 1 0 0 1 1-1h2.5M12.5 4H15a1 1 0 0 1 1 1v2.5M4 12.5V15a1 1 0 0 0 1 1h2.5"
+          strokeWidth="1.6"
+        />
+        <circle cx="11" cy="11" r="2.9" strokeWidth="1.8" />
+        <path d="M13.2 13.2l2.6 2.6" strokeWidth="2" />
       </g>
     </svg>
   );
