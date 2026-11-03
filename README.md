@@ -12,6 +12,7 @@ overlay.
 | `@uplide/debugbar-nest` | NestJS collector and integrations (Prisma driver adapter, Drizzle, ioredis, axios, fetch, logger). |
 | `@uplide/debugbar` | Framework-agnostic capture (`/axios`, `/fetch`) and the React overlay (`/react`). |
 | `@uplide/debugbar-next` | Next.js App Router glue: SSR capture, render profiling, inspector route. |
+| `@uplide/debugbar-cli` | `debugbar init`: sets up `@uplide/debugbar-next` in a Next.js project. |
 
 ## Wire contract
 
@@ -58,6 +59,9 @@ Browsers only see `x-debugbar` cross-origin when CORS exposes it:
 parameters — never enable it on a production deployment that real users hit.
 
 ## Frontend (Next.js App Router)
+
+`pnpm dlx @uplide/debugbar-cli init` makes the changes below (`--dry-run` to
+preview them). By hand:
 
 One config, shared by server and browser:
 
