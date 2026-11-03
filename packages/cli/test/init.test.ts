@@ -23,7 +23,7 @@ describe("init", () => {
       "skipped",
     ]);
     expect(first.changes.map(({ path }) => path).sort()).toEqual([
-      "app/api/debugbar/inspect/route.ts",
+      "app/api/debugbar/[endpoint]/route.ts",
       "app/layout.tsx",
       "debugbar.config.ts",
       "instrumentation-client.ts",

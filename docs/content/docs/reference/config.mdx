@@ -58,6 +58,11 @@ which builds `match` from `backend` and takes every other field below.
       description: 'Route the element picker posts to.',
       default: '"/api/debugbar/inspect"',
     },
+    mcp: {
+      type: 'boolean',
+      description: 'Forward captured entries to `/api/debugbar/events` for the [MCP route](/docs/frontend/mcp).',
+      default: 'false',
+    },
   }}
 />
 

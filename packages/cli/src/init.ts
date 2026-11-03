@@ -11,7 +11,7 @@ import {
 import type { Step, StepResult } from "./step.js";
 import { configStep } from "./steps/config.js";
 import { envStep } from "./steps/env.js";
-import { inspectRouteStep } from "./steps/inspect-route.js";
+import { routeStep } from "./steps/route.js";
 import { instrumentationClientStep, instrumentationStep } from "./steps/instrumentation.js";
 import { layoutStep } from "./steps/layout.js";
 import { nextConfigStep } from "./steps/next-config.js";
@@ -23,7 +23,7 @@ export const STEPS: readonly Step[] = [
   instrumentationStep,
   instrumentationClientStep,
   layoutStep,
-  inspectRouteStep,
+  routeStep,
   envStep,
 ];
 

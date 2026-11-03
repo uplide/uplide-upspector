@@ -34,11 +34,18 @@ export interface DebugbarConfig {
   maxBodyChars?: number;
   /** Route the element picker posts to. Default `/api/debugbar/inspect`. */
   inspectEndpoint?: string;
+  /**
+   * Forward every captured entry and render pass to the dev server's
+   * `/api/debugbar/events` route, for an agent to read over MCP. Default
+   * `false`: the entries carry SQL and bodies.
+   */
+  mcp?: boolean;
 }
 
 export type ResolvedDebugbarConfig = Required<DebugbarConfig>;
 
 export const DEFAULT_INSPECT_ENDPOINT = "/api/debugbar/inspect";
+export const EVENTS_ENDPOINT = "/api/debugbar/events";
 
 /**
  * Bodies are kept for every captured request, so one fat list response must
@@ -68,6 +75,7 @@ export function defineDebugbarConfig(
     ssrHeaders: config.ssrHeaders ?? [],
     maxBodyChars: config.maxBodyChars ?? DEFAULT_MAX_BODY_CHARS,
     inspectEndpoint: config.inspectEndpoint ?? DEFAULT_INSPECT_ENDPOINT,
+    mcp: config.mcp ?? false,
   };
 }
 

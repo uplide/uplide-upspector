@@ -16,18 +16,23 @@ The picker reads `data-insp-path` attributes from
 development builds, so add that plugin to your Next config first. Then add
 the route:
 
-```ts title="app/api/debugbar/inspect/route.ts"
-import { createInspectHandler } from '@uplide/debugbar-next/inspect';
+```ts title="app/api/debugbar/[endpoint]/route.ts"
+import { createDebugbarHandler } from '@uplide/debugbar-next/route';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const { POST } = createInspectHandler();
+export const { POST, GET, DELETE } = createDebugbarHandler();
 ```
 
-The default path is `/api/debugbar/inspect`; change it with the
-`inspectEndpoint` config field.
+The one route serves `/api/debugbar/inspect` and the
+[MCP endpoints](/docs/frontend/mcp). To mount the picker elsewhere, export
+`POST` from `createInspectHandler` (`@uplide/debugbar-next/inspect`) on that
+route and point the `inspectEndpoint` config field at it.
 
 ## Options
+
+`createDebugbarHandler` passes these to the inspector; `allowedHosts` also
+applies to the MCP endpoints.
 
 <TypeTable
   type={{
@@ -60,7 +65,7 @@ A resolver receives the call it found and returns the backend route it hits,
 or `undefined`. `readModule` follows imports, honouring the aliases.
 
 ```ts
-export const { POST } = createInspectHandler({
+export const { POST, GET, DELETE } = createDebugbarHandler({
   resolvers: [
     async ({ call, file, readModule }) => {
       const match = /productsService\.(\w+)/.exec(call.expression);

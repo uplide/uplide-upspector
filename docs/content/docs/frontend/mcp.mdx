@@ -1,0 +1,73 @@
+---
+title: MCP for agents
+description: Let a coding agent read what the backend did while it drives the browser.
+icon: Bot
+---
+
+An agent that drives the app in a browser (Claude in Chrome, Playwright MCP)
+sees the page, not the queries behind it. With the MCP route, the browser
+forwards every captured entry and render pass to the dev server, and the agent
+reads them as tools: "which requests did that click make, and did any of them
+run an N+1?"
+
+## Setup
+
+Both endpoints — `events`, which the browser forwards to, and `mcp`, which
+the agent connects to — are served by the same route as the
+[inspector](/docs/frontend/inspector):
+
+```ts title="app/api/debugbar/[endpoint]/route.ts"
+import { createDebugbarHandler } from '@uplide/debugbar-next/route';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const { POST, GET, DELETE } = createDebugbarHandler();
+```
+
+`createEventsHandler` and `createMcpHandler` from `@uplide/debugbar-next/mcp`
+are still exported for mounting an endpoint on a route of its own.
+
+Turn forwarding on in the shared config:
+
+```ts title="debugbar.config.ts"
+export default defineNextDebugbarConfig({
+  enabled: process.env.NEXT_PUBLIC_DEBUGBAR === 'true',
+  backend: { origins: [process.env.NEXT_PUBLIC_API_BASE_URL] },
+  mcp: true,
+});
+```
+
+Then register the server with the agent:
+
+```bash
+claude mcp add --transport http debugbar http://localhost:3000/api/debugbar/mcp
+```
+
+## Tools
+
+| Tool | Returns |
+| --- | --- |
+| `list_requests` | Recent requests with status, duration, query count and the page they were made on |
+| `get_request` | One request in full: SQL with parameters, outbound HTTP, cache, logs, exchange |
+| `find_issues` | Duplicate (N+1) and slow queries, query/upstream errors, error logs, 4xx/5xx, slow requests |
+| `get_render_passes` | Server render measurements of the loaded pages |
+| `clear` | Empties the buffer before a scenario |
+
+Every listing returns a `cursor`; pass it back as `sinceSeq` to see only what
+the next navigation produced. `pageUrl`, `url` and `tabId` narrow a listing.
+
+## How it works
+
+- Records reach the server from the browser only, after the overlay store has
+  them — so a page that never hydrates forwards nothing.
+- The dev server keeps the last 500 entries and 100 render passes in memory;
+  a restart empties it.
+- The MCP route is stateless Streamable HTTP with JSON responses only; there
+  is no server-initiated stream, so the agent polls with the tools.
+
+## Security
+
+Both routes answer only in development and run the same checks as the
+[inspector](/docs/frontend/inspector): loopback `Host` (or `allowedHosts`),
+same-origin `Origin`, `application/json`. Entries carry SQL and bound
+parameters; redaction is applied in the browser before anything is forwarded.

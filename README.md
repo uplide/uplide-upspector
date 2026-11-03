@@ -125,12 +125,12 @@ export default async function RootLayout({ children }) {
 ```
 
 ```ts
-// app/api/debugbar/inspect/route.ts — element picker (dev only)
-import { createInspectHandler } from "@uplide/debugbar-next/inspect";
+// app/api/debugbar/[endpoint]/route.ts
+import { createDebugbarHandler } from "@uplide/debugbar-next/route";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const { POST } = createInspectHandler();
+export const { POST, GET, DELETE } = createDebugbarHandler();
 ```
 
 Nothing else changes in the app: every server and browser `fetch` to the
@@ -191,7 +191,7 @@ generated and is shown in CSR captures; list such names in `redactKeys`.
 
 The picker reads `data-insp-path` attributes from
 [`code-inspector-plugin`](https://github.com/zh-lx/code-inspector) in development builds.
-`createInspectHandler` accepts:
+`createDebugbarHandler` (and `createInspectHandler`) accepts:
 
 - `patterns` — extra data-call patterns (defaults: `fetch`, axios-style clients, SWR/React Query hooks);
 - `aliases` — import aliases (default `{ "@/": <app dir> }`);
