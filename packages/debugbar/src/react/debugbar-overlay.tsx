@@ -1,7 +1,13 @@
 "use client";
 
 import { DEBUGBAR_PAYLOAD_VERSION } from "@uplide/debugbar-protocol";
-import { useEffect, useState } from "react";
+import {
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { MUTE_STORAGE_KEY, reportDebugbarStatus } from "../diagnose.js";
 import { matchesEndpoint } from "../inspect-path.js";
 import { useDebugbarStore } from "../store.js";
@@ -54,9 +60,20 @@ const CSS = `
 :where(:root){--udbg-accent:#e84393}
 .udbg-mark{display:block;width:20px;height:20px;border-radius:5px}
 .udbg-brand .udbg-mark{width:15px;height:15px;border-radius:4px}
-.udbg-icon{position:fixed;right:14px;bottom:14px;z-index:2147483000;display:flex;align-items:center;justify-content:center;width:40px;height:40px;padding:0;border:1px solid #2b303b;border-radius:12px;background:#15181f;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.45)}
-.udbg-icon:hover{border-color:var(--udbg-accent);box-shadow:0 8px 26px color-mix(in srgb,var(--udbg-accent) 35%,transparent)}
-.udbg-icon-count{position:absolute;top:-6px;right:-6px;min-width:17px;padding:0 5px;border-radius:9px;background:var(--udbg-accent);color:#fff;font:600 10px/17px ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:center;box-shadow:0 0 0 2px #15181f}
+.udbg-dock{position:fixed;z-index:2147483000;display:flex;align-items:center;gap:2px;height:38px;padding:0 4px;border:1px solid #2b303b;border-radius:12px;background:#15181f;color:#c7cedb;font:12px/1 ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.45);cursor:grab;user-select:none;touch-action:none}
+.udbg-dock[data-dragging="true"]{cursor:grabbing;border-color:var(--udbg-accent);box-shadow:0 10px 30px color-mix(in srgb,var(--udbg-accent) 30%,transparent)}
+.udbg-dock *{box-sizing:border-box}
+.udbg-dock-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:30px;min-width:30px;padding:0 6px;border:0;border-radius:8px;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.udbg-dock-btn:hover{background:#1d222c;color:#fff}
+.udbg-dock-btn[data-tone="accent"]{background:var(--udbg-accent);color:#fff}
+.udbg-dock-stat{color:#8b93a3;font-family:ui-monospace,Menlo,Monaco,Consolas,monospace;font-size:11px;white-space:nowrap}
+.udbg-dock-stat b{color:#f2f4f8;font-weight:600}
+.udbg-dock-sep{width:1px;height:18px;margin:0 2px;background:#2b303b}
+.udbg-tuck{position:fixed;z-index:2147483000;display:flex;align-items:center;justify-content:center;width:26px;height:42px;padding:0;border:1px solid #2b303b;background:#15181f;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.45)}
+.udbg-tuck[data-side="right"]{right:0;border-right:0;border-radius:10px 0 0 10px}
+.udbg-tuck[data-side="left"]{left:0;border-left:0;border-radius:0 10px 10px 0}
+.udbg-tuck:hover{border-color:var(--udbg-accent)}
+.udbg-tuck .udbg-mark{width:16px;height:16px;border-radius:4px}
 .udbg{position:fixed;left:0;right:0;bottom:0;z-index:2147483000;display:flex;flex-direction:column;background:#0f1216;color:#d7dbe3;font:12px/1.55 ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;border-top:1px solid #2b303b;box-shadow:0 -10px 30px rgba(0,0,0,.45)}
 .udbg *{box-sizing:border-box}
 .udbg-grip{height:6px;flex:none;cursor:ns-resize;background:transparent}
@@ -330,17 +347,20 @@ function RequestRail({
   );
 }
 
-/** Neutral bar-chart mark in the accent colour; no external asset. */
 function Mark() {
   return (
     <svg aria-hidden="true" className="udbg-mark" viewBox="0 0 20 20">
       <rect fill="var(--udbg-accent)" height="20" rx="5" width="20" />
-      <path
-        d="M5 14V9M10 14V5M15 14v-3"
+      <g
+        fill="none"
         stroke="#fff"
         strokeLinecap="round"
-        strokeWidth="2"
-      />
+        strokeLinejoin="round"
+      >
+        <circle cx="8.8" cy="8.8" r="4.6" strokeWidth="2" />
+        <path d="M12.3 12.3l3.4 3.4" strokeWidth="2.4" />
+        <path d="M5.9 9h1.4l.9-1.8 1.3 3.4.9-1.6h1.2" strokeWidth="1.2" />
+      </g>
     </svg>
   );
 }
@@ -1470,6 +1490,228 @@ const DEFAULT_HEIGHT = 360;
 /** Entry-scoped tabs need a captured request; these two do not. */
 const GLOBAL_TABS: Tab[] = ["inspect", "render"];
 
+type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+
+const CORNERS: Corner[] = [
+  "top-left",
+  "top-right",
+  "bottom-left",
+  "bottom-right",
+];
+const CORNER_KEY = "debugbar.corner";
+const TUCKED_KEY = "debugbar.tucked";
+const DOCK_GAP = 14;
+/** Pointer travel below this is a click, not a drag. */
+const DRAG_THRESHOLD = 4;
+
+function readCorner(): Corner {
+  if (typeof window === "undefined") return "bottom-right";
+
+  const stored = window.localStorage.getItem(CORNER_KEY) as Corner | null;
+
+  return stored && CORNERS.includes(stored) ? stored : "bottom-right";
+}
+
+function cornerStyle(corner: Corner): CSSProperties {
+  const [vertical, horizontal] = corner.split("-") as [
+    "top" | "bottom",
+    "left" | "right",
+  ];
+
+  return { [vertical]: DOCK_GAP, [horizontal]: DOCK_GAP };
+}
+
+/** Chevron pointing at the screen edge the dock tucks into. */
+function Chevron({ side }: { side: "left" | "right" }) {
+  return (
+    <svg
+      aria-hidden="true"
+      fill="none"
+      height="14"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+      width="14"
+    >
+      <path d={side === "right" ? "m9 6 6 6-6 6" : "m15 6-6 6 6 6"} />
+    </svg>
+  );
+}
+
+interface FloatingDockProps {
+  requestCount: number;
+  sqlCount: number;
+  picking: boolean;
+  onOpen: () => void;
+  onPick: () => void;
+}
+
+/**
+ * Collapsed state, after react-scan's toolbar: a pill that is dragged anywhere
+ * and snaps to the nearest corner on release, or tucks into the side edge as a
+ * thin tab so it never sits on top of the page being debugged. Corner and
+ * tucked state persist per browser.
+ */
+function FloatingDock({
+  requestCount,
+  sqlCount,
+  picking,
+  onOpen,
+  onPick,
+}: FloatingDockProps) {
+  const [corner, setCorner] = useState<Corner>(readCorner);
+  const [tucked, setTucked] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.localStorage.getItem(TUCKED_KEY) === "true",
+  );
+  const [drag, setDrag] = useState<{ left: number; top: number } | null>(
+    null,
+  );
+  const dockRef = useRef<HTMLDivElement>(null);
+  // Set when a drag ends so the click that follows the pointerup is swallowed
+  // instead of opening the panel.
+  const draggedRef = useRef(false);
+
+  const side = corner.endsWith("left") ? "left" : "right";
+  const summary = `Debugbar — ${requestCount} request(s), ${sqlCount} queries`;
+
+  function tuck(next: boolean) {
+    setTucked(next);
+    window.localStorage.setItem(TUCKED_KEY, String(next));
+  }
+
+  // No pointer capture: it would retarget the click to the dock and the
+  // buttons inside would never see it.
+  function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.button !== 0 || !dockRef.current) return;
+
+    const rect = dockRef.current.getBoundingClientRect();
+    const startX = event.clientX;
+    const startY = event.clientY;
+    let moved = false;
+    draggedRef.current = false;
+
+    function onMove(move: PointerEvent) {
+      const dx = move.clientX - startX;
+      const dy = move.clientY - startY;
+
+      if (!moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+
+      moved = true;
+      setDrag({
+        left: Math.min(
+          Math.max(rect.left + dx, 0),
+          window.innerWidth - rect.width,
+        ),
+        top: Math.min(
+          Math.max(rect.top + dy, 0),
+          window.innerHeight - rect.height,
+        ),
+      });
+    }
+
+    function onUp(up: PointerEvent) {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+
+      if (!moved) return;
+
+      const centerX = rect.left + rect.width / 2 + (up.clientX - startX);
+      const centerY = rect.top + rect.height / 2 + (up.clientY - startY);
+      const vertical = centerY < window.innerHeight / 2 ? "top" : "bottom";
+      const horizontal = centerX < window.innerWidth / 2 ? "left" : "right";
+      const next: Corner = `${vertical}-${horizontal}`;
+
+      draggedRef.current = true;
+      setDrag(null);
+      setCorner(next);
+      window.localStorage.setItem(CORNER_KEY, next);
+    }
+
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  }
+
+  if (tucked) {
+    return (
+      <button
+        aria-label={`${summary} — show the toolbar`}
+        className="udbg-tuck"
+        data-debugbar=""
+        data-side={side}
+        onClick={() => tuck(false)}
+        style={{ [corner.startsWith("top") ? "top" : "bottom"]: DOCK_GAP }}
+        title={summary}
+        type="button"
+      >
+        <Mark />
+      </button>
+    );
+  }
+
+  return (
+    <div
+      aria-label="Debugbar"
+      className="udbg-dock"
+      data-debugbar=""
+      data-dragging={drag !== null}
+      onClickCapture={(event) => {
+        if (!draggedRef.current) return;
+
+        draggedRef.current = false;
+        event.stopPropagation();
+      }}
+      onPointerDown={onPointerDown}
+      ref={dockRef}
+      role="toolbar"
+      style={drag ?? cornerStyle(corner)}
+    >
+      <button
+        className="udbg-dock-btn"
+        onClick={onOpen}
+        title={`${summary} — open the panel`}
+        type="button"
+      >
+        <Mark />
+        <span className="udbg-dock-stat">
+          <b>{requestCount}</b> req
+        </span>
+        <span className="udbg-dock-stat">
+          <b>{sqlCount}</b> sql
+        </span>
+      </button>
+      <span className="udbg-dock-sep" />
+      <button
+        aria-label="Pick an element"
+        aria-pressed={picking}
+        className="udbg-dock-btn"
+        data-tone={picking ? "accent" : undefined}
+        onClick={onPick}
+        title={
+          picking
+            ? `Picking — click an element, Esc cancels (${PICKER_SHORTCUT})`
+            : `Pick an element (${PICKER_SHORTCUT})`
+        }
+        type="button"
+      >
+        <PickIcon />
+      </button>
+      <button
+        aria-label="Tuck into the screen edge"
+        className="udbg-dock-btn"
+        onClick={() => tuck(true)}
+        title="Tuck into the screen edge"
+        type="button"
+      >
+        <Chevron side={side} />
+      </button>
+    </div>
+  );
+}
+
 export interface DebugbarOverlayProps {
   /** CSP nonce for the overlay's own `<style>` tag. */
   nonce?: string;
@@ -1478,8 +1720,9 @@ export interface DebugbarOverlayProps {
 /**
  * Debug bar for the payload the backend appends to every JSON envelope while
  * its debugbar is enabled, plus the server render pass and the element
- * inspector: an icon in the bottom-right corner that opens a resizable panel
- * docked to the bottom of the viewport.
+ * inspector: a small draggable dock that snaps to the nearest corner (or tucks
+ * into the screen edge) and opens a resizable panel docked to the bottom of
+ * the viewport.
  *
  * Ships its own stylesheet, so it needs no Tailwind/theme wiring.
  */
@@ -1492,6 +1735,8 @@ export function DebugbarOverlay({ nonce }: DebugbarOverlayProps = {}) {
   const renderPass = useDebugbarStore((state) => state.renderPass);
   const picking = useDebugbarStore((state) => state.picking);
   const setPicking = useDebugbarStore((state) => state.setPicking);
+  const inspectLoading = useDebugbarStore((state) => state.inspectLoading);
+  const inspectError = useDebugbarStore((state) => state.inspectError);
   const clear = useDebugbarStore((state) => state.clear);
   const [tab, setTab] = useState<Tab>("inspect");
   const [dragging, setDragging] = useState(false);
@@ -1512,6 +1757,15 @@ export function DebugbarOverlay({ nonce }: DebugbarOverlayProps = {}) {
   // arrives, so a misconfigured backend looks like a broken feature. This
   // prints one console line explaining which side is quiet.
   useEffect(reportDebugbarStatus, []);
+
+  // A pick armed from the dock (or the shortcut) while the panel is closed
+  // would otherwise land its result out of sight.
+  useEffect(() => {
+    if (!inspectLoading && !inspectError) return;
+
+    setTab("inspect");
+    setOpen(true);
+  }, [inspectLoading, inspectError, setOpen]);
 
   useEffect(() => {
     if (!dragging) return;
@@ -1562,24 +1816,19 @@ export function DebugbarOverlay({ nonce }: DebugbarOverlayProps = {}) {
   );
 
   if (!open) {
-    const summary = `Debugbar — ${requestCount} request(s), ${sqlCount} queries`;
-
     return (
       <>
         <style nonce={nonce}>{CSS}</style>
-        <button
-          aria-label={summary}
-          className="udbg-icon"
-          data-debugbar=""
-          onClick={() => setOpen(true)}
-          title={summary}
-          type="button"
-        >
-          <Mark />
-          {requestCount > 0 ? (
-            <span className="udbg-icon-count">{requestCount}</span>
-          ) : null}
-        </button>
+        <FloatingDock
+          onOpen={() => setOpen(true)}
+          onPick={() => {
+            setTab("inspect");
+            setPicking(!picking);
+          }}
+          picking={picking}
+          requestCount={requestCount}
+          sqlCount={sqlCount}
+        />
         <DebugbarPicker />
       </>
     );
