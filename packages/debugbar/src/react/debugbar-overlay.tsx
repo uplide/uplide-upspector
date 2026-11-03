@@ -88,7 +88,7 @@ const CSS = `
 .udbg-btn{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 10px;border:1px solid #2b303b;border-radius:7px;background:#171b24;color:#c7cedb;font:12px/1 inherit;cursor:pointer}
 .udbg-btn:hover{border-color:#3c4350;background:#1d222c;color:#fff}
 .udbg-btn[data-tone="accent"]{border-color:var(--udbg-accent);background:var(--udbg-accent);color:#fff}
-.udbg-btn[data-tone="accent"]:hover{background:#f05ba4;border-color:#f05ba4}
+.udbg-btn[data-tone="accent"]:hover{background:color-mix(in srgb,var(--udbg-accent) 85%,#fff);border-color:color-mix(in srgb,var(--udbg-accent) 85%,#fff)}
 .udbg-icon-btn{width:26px;padding:0;justify-content:center}
 .udbg-subbar{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #1d222b;background:#131720}
 .udbg-seg{display:inline-flex;padding:2px;border:1px solid #2b303b;border-radius:8px;background:#0f1216}
@@ -166,6 +166,18 @@ button.udbg-json-toggle:hover{color:var(--udbg-accent)}
 .udbg-code div[data-hit="true"]{background:color-mix(in srgb,var(--udbg-accent) 14%,transparent);box-shadow:inset 2px 0 0 var(--udbg-accent)}
 .udbg-section{padding:7px 10px;border-top:1px solid #1d222b;border-bottom:1px solid #1d222b;background:#131720;color:#6f788a;font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:10px}
 .udbg-bodytext{max-height:40vh;white-space:pre-wrap;word-break:break-word}
+.udbg-settings{position:relative}
+.udbg-settings>.udbg-btn[aria-expanded="true"]{border-color:var(--udbg-accent);color:#fff}
+.udbg-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:3;display:flex;flex-direction:column;gap:10px;width:244px;padding:10px;border:1px solid #2b303b;border-radius:10px;background:#15181f;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.udbg-menu-label{color:#6f788a;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.udbg-menu-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.udbg-swatch{width:22px;height:22px;padding:0;border:2px solid transparent;border-radius:6px;cursor:pointer}
+.udbg-swatch[data-active="true"]{border-color:#fff}
+.udbg-color{width:30px;height:22px;padding:0;border:1px solid #2b303b;border-radius:6px;background:transparent;cursor:pointer}
+.udbg-color-value{color:#8b93a3;font:11px ui-monospace,Menlo,Monaco,Consolas,monospace}
+.udbg-menu-row .udbg-btn{height:22px;margin-left:auto;padding:0 8px;font-size:11px}
+.udbg-menu-row .udbg-btn:disabled{opacity:.35;cursor:not-allowed}
+.udbg-copyright{padding-top:8px;border-top:1px solid #1d222b;color:#6f788a;font-size:10.5px;line-height:1.4}
 `;
 
 function ms(value: number): string {
@@ -1715,6 +1727,145 @@ function FloatingDock({
   );
 }
 
+/**
+ * Accent colour picked in the settings menu, remembered per browser. Set on
+ * `<html>` so the element picker's highlight follows it too, and it beats a
+ * host's `:root` override only while a developer has actually picked one.
+ */
+const ACCENT_KEY = "debugbar.accent";
+const DEFAULT_ACCENT = "#e84393";
+const ACCENT_PRESETS = [
+  DEFAULT_ACCENT,
+  "#7c3aed",
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+];
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
+const COPYRIGHT = `© ${new Date().getFullYear()} Uplide. All rights reserved.`;
+
+function readAccent(): string | null {
+  if (typeof window === "undefined") return null;
+
+  const stored = window.localStorage.getItem(ACCENT_KEY);
+
+  return stored && HEX_COLOR.test(stored) ? stored : null;
+}
+
+function GearIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      fill="none"
+      height="14"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+      width="14"
+    >
+      <path d="M12.2 2h-.4a2 2 0 0 0-2 2v.2a2 2 0 0 1-1 1.7l-.4.3a2 2 0 0 1-2 0l-.2-.1a2 2 0 0 0-2.7.7l-.2.4a2 2 0 0 0 .7 2.7l.2.1a2 2 0 0 1 1 1.7v.5a2 2 0 0 1-1 1.7l-.2.1a2 2 0 0 0-.7 2.7l.2.4a2 2 0 0 0 2.7.7l.2-.1a2 2 0 0 1 2 0l.4.3a2 2 0 0 1 1 1.7v.2a2 2 0 0 0 2 2h.4a2 2 0 0 0 2-2v-.2a2 2 0 0 1 1-1.7l.4-.3a2 2 0 0 1 2 0l.2.1a2 2 0 0 0 2.7-.7l.2-.4a2 2 0 0 0-.7-2.7l-.2-.1a2 2 0 0 1-1-1.7v-.5a2 2 0 0 1 1-1.7l.2-.1a2 2 0 0 0 .7-2.7l-.2-.4a2 2 0 0 0-2.7-.7l-.2.1a2 2 0 0 1-2 0l-.4-.3a2 2 0 0 1-1-1.7V4a2 2 0 0 0-2-2z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+/**
+ * Per-browser preferences, opened from the gear in the panel header. Closes
+ * on Escape or a click anywhere outside it.
+ */
+function SettingsMenu({
+  accent,
+  onAccent,
+}: {
+  accent: string | null;
+  onAccent: (next: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLSpanElement>(null);
+  const current = accent ?? DEFAULT_ACCENT;
+
+  useEffect(() => {
+    if (!open) return;
+
+    function onPointerDown(event: PointerEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <span className="udbg-settings" ref={rootRef}>
+      <button
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        aria-label="Settings"
+        className="udbg-btn udbg-icon-btn"
+        onClick={() => setOpen(!open)}
+        title="Settings"
+        type="button"
+      >
+        <GearIcon />
+      </button>
+
+      {open ? (
+        <div aria-label="Debugbar settings" className="udbg-menu" role="dialog">
+          <span className="udbg-menu-label">accent color</span>
+          <div className="udbg-menu-row">
+            {ACCENT_PRESETS.map((color) => (
+              <button
+                aria-label={`Use ${color}`}
+                className="udbg-swatch"
+                data-active={current.toLowerCase() === color}
+                key={color}
+                onClick={() => onAccent(color === DEFAULT_ACCENT ? null : color)}
+                style={{ background: color }}
+                title={color}
+                type="button"
+              />
+            ))}
+          </div>
+          <div className="udbg-menu-row">
+            <input
+              aria-label="Custom accent color"
+              className="udbg-color"
+              onChange={(event) => onAccent(event.target.value)}
+              type="color"
+              value={current}
+            />
+            <span className="udbg-color-value">{current}</span>
+            <button
+              className="udbg-btn"
+              disabled={accent === null}
+              onClick={() => onAccent(null)}
+              title="Back to the default (or the host's --udbg-accent)"
+              type="button"
+            >
+              reset
+            </button>
+          </div>
+
+          <div className="udbg-copyright">{COPYRIGHT}</div>
+        </div>
+      ) : null}
+    </span>
+  );
+}
+
 export interface DebugbarOverlayProps {
   /** CSP nonce for the overlay's own `<style>` tag. */
   nonce?: string;
@@ -1755,6 +1906,7 @@ export function DebugbarOverlay({ nonce }: DebugbarOverlayProps = {}) {
 
     return Number(window.localStorage.getItem(HEIGHT_KEY)) || DEFAULT_HEIGHT;
   });
+  const [accent, setAccent] = useState(readAccent);
 
   // The overlay is mounted on every page but renders nothing until a payload
   // arrives, so a misconfigured backend looks like a broken feature. This
@@ -1795,6 +1947,24 @@ export function DebugbarOverlay({ nonce }: DebugbarOverlayProps = {}) {
       document.removeEventListener("mouseup", onUp);
     };
   }, [dragging]);
+
+  useEffect(() => {
+    const root = document.documentElement.style;
+
+    if (accent) root.setProperty("--udbg-accent", accent);
+    else root.removeProperty("--udbg-accent");
+
+    return () => {
+      root.removeProperty("--udbg-accent");
+    };
+  }, [accent]);
+
+  function changeAccent(next: string | null) {
+    setAccent(next);
+
+    if (next) window.localStorage.setItem(ACCENT_KEY, next);
+    else window.localStorage.removeItem(ACCENT_KEY);
+  }
 
   // A page can have a server render pass and no captured API request at all —
   // that is still worth showing.
@@ -1901,6 +2071,7 @@ export function DebugbarOverlay({ nonce }: DebugbarOverlayProps = {}) {
             <button className="udbg-btn" onClick={clear} type="button">
               clear
             </button>
+            <SettingsMenu accent={accent} onAccent={changeAccent} />
             <button
               className="udbg-btn"
               onClick={() => {

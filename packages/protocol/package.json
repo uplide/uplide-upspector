@@ -2,7 +2,7 @@
   "name": "@uplide/debugbar-protocol",
   "version": "0.1.0",
   "description": "Wire contract shared by the debugbar backend and frontend packages.",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "type": "module",
   "main": "./dist/cjs/index.js",
   "types": "./dist/esm/index.d.ts",

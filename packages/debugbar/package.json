@@ -2,7 +2,7 @@
   "name": "@uplide/debugbar",
   "version": "0.1.0",
   "description": "Browser and SSR capture of the debugbar payload for axios and fetch, plus the React overlay.",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "type": "module",
   "exports": {
     ".": {
