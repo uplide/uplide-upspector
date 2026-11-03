@@ -1,0 +1,22 @@
+{
+  "name": "@uplide/debugbar-cli",
+  "version": "0.1.0",
+  "description": "Sets up @uplide/debugbar-next in a Next.js App Router project.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "bin": {
+    "debugbar": "./dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "diff": "^9.0.0",
+    "ts-morph": "^28.0.0"
+  }
+}

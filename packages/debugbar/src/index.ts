@@ -11,12 +11,14 @@ export { beginCapture, setCaptureTracker } from "./capture.js";
 export type { DebugbarCaptureTracker } from "./capture.js";
 export {
   DEFAULT_INSPECT_ENDPOINT,
+  EVENTS_ENDPOINT,
   defineDebugbarConfig,
   getDebugbarConfig,
   setDebugbarConfig,
 } from "./config.js";
 export type { DebugbarConfig, ResolvedDebugbarConfig } from "./config.js";
 export { reportDebugbarStatus } from "./diagnose.js";
+export { forwardDebugbarEntries } from "./forward.js";
 export { createEntry, toBody, toHeaders } from "./entry.js";
 export type { DebugbarRawExchange } from "./entry.js";
 export {

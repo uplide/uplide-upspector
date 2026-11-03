@@ -1,4 +1,9 @@
-import { type DebugbarConfig, setDebugbarConfig } from "@uplide/debugbar";
+import {
+  type DebugbarConfig,
+  EVENTS_ENDPOINT,
+  forwardDebugbarEntries,
+  setDebugbarConfig,
+} from "@uplide/debugbar";
 import { installFetchCapture } from "@uplide/debugbar/fetch";
 
 /**
@@ -6,11 +11,22 @@ import { installFetchCapture } from "@uplide/debugbar/fetch";
  * synchronous code there is guaranteed to finish before hydration, so this is
  * what puts the `window.fetch` wrapper in place before the first request.
  *
+ * With `mcp` on, captured entries are also forwarded to the `events` endpoint
+ * of the debugbar route, for its `mcp` endpoint to hand to an agent.
+ *
  * Returns an uninstall function.
  */
 export function installDebugbarClient(config: DebugbarConfig): () => void {
   const resolved = setDebugbarConfig(config);
   if (!resolved.enabled) return () => {};
 
-  return installFetchCapture({ source: "csr" });
+  const uninstall = installFetchCapture({ source: "csr" });
+  const stopForwarding = resolved.mcp
+    ? forwardDebugbarEntries(EVENTS_ENDPOINT)
+    : () => {};
+
+  return () => {
+    stopForwarding();
+    uninstall();
+  };
 }

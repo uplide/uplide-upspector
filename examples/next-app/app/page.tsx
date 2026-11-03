@@ -17,7 +17,7 @@ export default measureServerComponent("HomePage", async function HomePage() {
     <main>
       <h1>debugbar example</h1>
       <p>
-        This list was rendered on the server. Open the debugbar icon in the
+        This list was rendered on the server. Open the debugbar toolbar in the
         bottom-right corner: the SSR request and its SQL (including an N+1)
         are there.
       </p>

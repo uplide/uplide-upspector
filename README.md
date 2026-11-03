@@ -12,6 +12,7 @@ overlay.
 | `@uplide/debugbar-nest` | NestJS collector and integrations (Prisma driver adapter, Drizzle, ioredis, axios, fetch, logger). |
 | `@uplide/debugbar` | Framework-agnostic capture (`/axios`, `/fetch`) and the React overlay (`/react`). |
 | `@uplide/debugbar-next` | Next.js App Router glue: SSR capture, render profiling, inspector route. |
+| `@uplide/debugbar-cli` | `debugbar init`: sets up `@uplide/debugbar-next` in a Next.js project. |
 
 ## Wire contract
 
@@ -58,6 +59,9 @@ Browsers only see `x-debugbar` cross-origin when CORS exposes it:
 parameters — never enable it on a production deployment that real users hit.
 
 ## Frontend (Next.js App Router)
+
+`pnpm dlx @uplide/debugbar-cli init` makes the changes below (`--dry-run` to
+preview them). By hand:
 
 One config, shared by server and browser:
 
@@ -121,12 +125,12 @@ export default async function RootLayout({ children }) {
 ```
 
 ```ts
-// app/api/debugbar/inspect/route.ts — element picker (dev only)
-import { createInspectHandler } from "@uplide/debugbar-next/inspect";
+// app/api/debugbar/[endpoint]/route.ts
+import { createDebugbarHandler } from "@uplide/debugbar-next/route";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const { POST } = createInspectHandler();
+export const { POST, GET, DELETE } = createDebugbarHandler();
 ```
 
 Nothing else changes in the app: every server and browser `fetch` to the
@@ -187,7 +191,7 @@ generated and is shown in CSR captures; list such names in `redactKeys`.
 
 The picker reads `data-insp-path` attributes from
 [`code-inspector-plugin`](https://github.com/zh-lx/code-inspector) in development builds.
-`createInspectHandler` accepts:
+`createDebugbarHandler` (and `createInspectHandler`) accepts:
 
 - `patterns` — extra data-call patterns (defaults: `fetch`, axios-style clients, SWR/React Query hooks);
 - `aliases` — import aliases (default `{ "@/": <app dir> }`);

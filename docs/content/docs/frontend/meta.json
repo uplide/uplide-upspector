@@ -1,4 +1,4 @@
 {
   "title": "Frontend",
-  "pages": ["nextjs", "axios", "react", "redaction", "inspector", "render-profiling"]
+  "pages": ["nextjs", "cli", "axios", "react", "redaction", "inspector", "render-profiling", "mcp"]
 }
