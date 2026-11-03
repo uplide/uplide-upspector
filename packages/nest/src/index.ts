@@ -1,5 +1,6 @@
 export * from './collector';
 export * from './context';
+export * from './integrations/drizzle';
 export * from './integrations/http';
 export * from './integrations/prisma';
 export * from './integrations/redis';
